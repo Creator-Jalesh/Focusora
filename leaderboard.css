@@ -1,0 +1,232 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: #f4f7f6;
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar-logo {
+    width: 150px;
+}
+
+.menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-item {
+    text-decoration: none;
+    color: #555;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menu-item:hover, .menu-item.active {
+    background: #0052D4;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 82, 212, 0.2);
+}
+
+.bottom-menu {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Main Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.top-bar {
+    background: #ffffff;
+    padding: 20px 30px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.top-bar h2 {
+    color: #0052D4;
+    font-size: 1.5rem;
+}
+
+/* Grid layout for 2 Leaderboards + Calendar */
+.leaderboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    padding-bottom: 20px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.card h3 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+/* Tables */
+.table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th, td {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+th {
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cal-day {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.cal-day .date-num {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #555;
+}
+
+.cal-day .date-time {
+    font-size: 0.7rem;
+    color: #0052D4;
+    font-weight: 600;
+}
+
+.cal-day.today {
+    background: #e0e7ff;
+    border-color: #0052D4;
+}
+/* =========================================
+   🌙 DARK THEME STYLES (Paste at the bottom)
+   ========================================= */
+body.dark-theme {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .sidebar,
+body.dark-theme .top-bar,
+body.dark-theme .card,
+body.dark-theme .stat-box {
+    background: #1e1e1e !important;
+    border-color: #333 !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.02) !important;
+}
+
+body.dark-theme h2, 
+body.dark-theme h3, 
+body.dark-theme .stat-num, 
+body.dark-theme .goal-text {
+    color: #ffffff !important;
+}
+
+body.dark-theme .menu-item {
+    color: #b0b0b0;
+}
+
+body.dark-theme .menu-item:hover, 
+body.dark-theme .menu-item.active {
+    background: #0052D4 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .date-badge {
+    background: #333 !important;
+    color: #4da3ff !important;
+}
+
+body.dark-theme .goal-item {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+body.dark-theme input {
+    background: #333 !important;
+    color: white !important;
+    border-color: #555 !important;
+}
+
+body.dark-theme input::placeholder {
+    color: #888 !important;
+}

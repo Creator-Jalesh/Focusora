@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focusora - Exam Prep</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
+
+    <!-- Puter.js Free AI Library -->
+    <script src="https://js.puter.com/v2/"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <style>
+        .exam-wrapper { padding: 10px 0; display: flex; flex-direction: column; gap: 20px; }
+        .step-view { display: flex; flex-direction: column; gap: 20px; }
+        .hidden { display: none !important; }
+
+        .exam-header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg, #181824);
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #2e2e48);
+        }
+
+        .back-nav-btn {
+            background: var(--input-bg, #252538);
+            color: var(--text-color, #ffffff);
+            border: 1px solid #4f46e5;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .back-nav-btn:hover { background: #4f46e5; color: #ffffff; }
+
+        .exam-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .exam-card-item {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+        }
+        .exam-card-item:hover {
+            transform: translateY(-4px);
+            border-color: #6366f1;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
+            background: var(--hover-bg, #1e1e30);
+        }
+        .exam-card-item h3 { font-size: 19px; margin-bottom: 8px; color: #818cf8; font-weight: 600; }
+        .exam-card-item p { font-size: 13px; color: var(--subtext-color, #94a3b8); line-height: 1.5; }
+
+        .nta-subject-tabs {
+            display: flex;
+            gap: 12px;
+            background: var(--card-bg, #181824);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #2e2e48);
+            overflow-x: auto;
+        }
+        .nta-tab-btn {
+            background: var(--input-bg, #202035);
+            color: var(--subtext-color, #94a3b8);
+            border: 1px solid var(--border-color, #33334d);
+            padding: 9px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .nta-tab-btn:hover { border-color: #6366f1; color: var(--text-color, #ffffff); }
+        .nta-tab-btn.active {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #818cf8;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+
+        .filter-bar-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: var(--card-bg, #181824);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color, #2e2e48);
+        }
+        .filter-select {
+            background: var(--input-bg, #202035);
+            border: 1px solid var(--border-color, #3b3b54);
+            color: var(--text-color, #fff);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .stats-badge {
+            font-size: 13px;
+            color: #38bdf8;
+            font-weight: 600;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        .mock-container { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        @media (max-width: 900px) { .mock-container { grid-template-columns: 1fr; } }
+
+        .mock-timer-badge {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .quiz-panel-card {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 16px;
+            padding: 28px;
+        }
+
+        .quiz-meta-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: var(--subtext-color, #94a3b8);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color, #2e2e48);
+        }
+
+        .diff-tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .diff-easy { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .diff-moderate { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .diff-hard { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .quiz-question-box {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+            white-space: pre-wrap;
+        }
+
+        .options-list-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+        .mock-opt-btn, .quiz-opt-btn {
+            background: var(--input-bg, #202035);
+            border: 1px solid var(--border-color, #33334d);
+            color: var(--text-color, #ffffff);
+            padding: 14px 18px;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .mock-opt-btn:hover, .quiz-opt-btn:hover { border-color: #6366f1; background: var(--hover-bg, #282845); }
+        .mock-opt-btn.selected { background: #4f46e5 !important; border-color: #818cf8 !important; color: #ffffff !important; font-weight: 600; }
+        .quiz-opt-btn.correct { background: rgba(16, 185, 129, 0.2) !important; border-color: #10b981 !important; color: #34d399 !important; font-weight: 600; }
+        .quiz-opt-btn.wrong { background: rgba(239, 68, 68, 0.2) !important; border-color: #ef4444 !important; color: #f87171 !important; font-weight: 600; }
+
+        .mock-palette-box {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: fit-content;
+        }
+        .mock-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .pal-btn {
+            background: var(--input-bg, #252538);
+            color: var(--subtext-color, #94a3b8);
+            border: 1px solid var(--border-color, #33334d);
+            height: 38px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .pal-btn.active { outline: 2px solid #818cf8; }
+        .pal-btn.not-answered { background: rgba(239, 68, 68, 0.25); color: #f87171; border-color: #ef4444; }
+        .pal-btn.answered { background: rgba(16, 185, 129, 0.25); color: #34d399; border-color: #10b981; }
+        .pal-btn.review { background: rgba(168, 85, 247, 0.25); color: #c084fc; border-color: #a855f7; }
+
+        .palette-legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--subtext-color, #94a3b8);
+            border-top: 1px solid var(--border-color, #2e2e48);
+            padding-top: 12px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+        .next-q-btn {
+            background: #4f46e5;
+            color: #ffffff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .next-q-btn:hover { background: #4338ca; }
+        .btn-secondary { background: var(--input-bg, #252538); color: var(--text-color, #ffffff); border: 1px solid var(--border-color, #33334d); }
+        .btn-secondary:hover { background: var(--hover-bg, #32324d); }
+        .btn-warning { background: #9333ea; color: #ffffff; }
+        .btn-warning:hover { background: #7e22ce; }
+        .btn-danger { background: #dc2626; color: #ffffff; }
+        .btn-danger:hover { background: #b91c1c; }
+
+        .score-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .score-box {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+        .score-box h4 { font-size: 26px; margin-bottom: 4px; font-weight: 700; color: #818cf8; }
+        .score-box p { font-size: 12px; color: var(--subtext-color, #94a3b8); }
+
+        .sub-score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .sub-score-card {
+            background: var(--input-bg, #1e1f31);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color, #2e2e48);
+        }
+
+        .feed-container { display: flex; flex-direction: column; gap: 15px; }
+        .q-feed-card {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .q-feed-card:hover { border-color: #6366f1; background: var(--hover-bg, #1c1c2e); transform: translateX(4px); }
+        .q-feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
+        .q-feed-title { font-size: 15px; font-weight: 600; color: var(--text-color, #f1f5f9); margin-bottom: 12px; line-height: 1.5; }
+        .q-feed-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+        .status-unsolved { background: var(--input-bg, #252538); color: var(--subtext-color, #94a3b8); }
+        .status-correct { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .status-wrong { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .solution-box {
+            background: var(--input-bg, #13131c);
+            border: 1px solid #3b82f6;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #93c5fd;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        /* Sidebar profile styling matching image */
+        .sidebar-user-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .sidebar-user-box:hover { background: rgba(255,255,255,0.05); }
+        .sidebar-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #6366f1;
+        }
+        .sidebar-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color, #ffffff);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar-logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #ef4444;
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .sidebar-logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
+
+        /* Floating AI Chatbot */
+        #aiChatBtn {
+            position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: grab; box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+            z-index: 99999; user-select: none; touch-action: none;
+        }
+        #aiChatBtn:active { cursor: grabbing; }
+
+        #aiChatWindow {
+            position: fixed; bottom: 92px; right: 24px; width: 350px; height: 480px;
+            background: var(--card-bg, #181824); border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 16px; display: flex; flex-direction: column;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5); z-index: 99999;
+            overflow: hidden; font-family: 'Poppins', sans-serif; touch-action: none;
+        }
+        .ai-chat-hidden { display: none !important; pointer-events: none !important; }
+        .ai-chat-header {
+            background: var(--input-bg, #202032); padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color, #2e2e48); cursor: move; user-select: none;
+        }
+        .ai-chat-title { font-size: 14px; font-weight: 600; color: var(--text-color, #ffffff); display: flex; flex-direction: column; pointer-events: none; }
+        .ai-chat-status { font-size: 11px; color: #10b981; font-weight: 400; }
+        .ai-close-btn { background: none; border: none; color: var(--subtext-color, #94a3b8); font-size: 22px; cursor: pointer; }
+        .ai-chat-body { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+        .ai-bot-msg, .ai-user-msg { max-width: 82%; padding: 10px 12px; border-radius: 12px; line-height: 1.45; word-wrap: break-word; }
+        .ai-bot-msg { background: var(--input-bg, #26263b); color: var(--text-color, #e2e8f0); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .ai-user-msg { background: #4f46e5; color: #ffffff; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-chat-input-area { display: flex; padding: 10px 12px; background: var(--input-bg, #202032); border-top: 1px solid var(--border-color, #2e2e48); gap: 8px; }
+        #aiUserInput { flex: 1; background: var(--card-bg, #13131c); border: 1px solid var(--border-color, #33334d); padding: 8px 12px; border-radius: 8px; color: var(--text-color, #ffffff); outline: none; font-size: 13px; font-family: inherit; }
+        #aiSendBtn { background: #4f46e5; border: none; color: #ffffff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="assets/image_1.png" alt="Focusora Logo" class="sidebar-logo">
+            </div>
+            
+            <nav class="menu" id="sidebarMenu">
+                <a href="home.html" class="menu-item">🏠 Home</a>
+                <a href="leaderboard.html" class="menu-item">🏆 Leaderboard</a>
+                <a href="groups.html" class="menu-item">👥 Groups/Rooms</a>
+                <a href="goals.html" class="menu-item">🎯 Today Goals</a>
+                <a href="exam.html" class="menu-item active">📝 Exam Prep (PYQs)</a>
+            </nav>
+            
+            <div class="bottom-menu">
+                <button class="menu-item theme-toggle">🌓 Dark/Light</button>
+                <div id="authContainer" style="display: flex; flex-direction: column; gap: 4px; margin-top: 10px;"></div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h2>📝 Interactive Exam & Real NTA Mock Engine</h2>
+            </header>
+
+            <div class="exam-wrapper">
+                
+                <!-- View 1: Select Exam -->
+                <div id="viewExams" class="step-view">
+                    <div class="card" style="padding: 24px;">
+                        <h3 style="margin-bottom: 6px; color:#818cf8;">🎯 Choose Target Examination</h3>
+                        <p style="color: var(--subtext-color, #94a3b8); font-size: 13px; margin-bottom: 20px;">Select your exam to practice past questions or full shift mock tests.</p>
+                        
+                        <div class="exam-selection-grid" id="examCardsContainer">
+                            <p style="color: var(--subtext-color, #94a3b8);">Loading available exams...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 2: Choose Mode -->
+                <div id="viewCategory" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <button class="back-nav-btn" onclick="window.goToView('viewExams')">← Back to Exams</button>
+                        <h3 id="categoryExamTitle" style="color: #818cf8; margin: 0;">Exam Options</h3>
+                    </div>
+                    
+                    <div class="exam-selection-grid">
+                        <div class="exam-card-item" onclick="window.selectMode('PYQ')">
+                            <h3>📚 Previous Year Questions (PYQs)</h3>
+                            <p>Subject-wise question practice with instant answers and filters.</p>
+                        </div>
+                        <div class="exam-card-item" onclick="window.selectMode('Mock Test')">
+                            <h3>⏱️ Live Mock Test Mode (Full Papers)</h3>
+                            <p>Year, Date & Shift Papers with Real NTA Timer, Subject Switcher & 300 Marks Scorecard.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 3A: PYQ Subject Selection -->
+                <div id="viewPyqSubjects" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <button class="back-nav-btn" onclick="window.goToView('viewCategory')">← Back</button>
+                        <h3 id="pyqSubjectTitle" style="color: #818cf8; margin: 0;">Select Subject</h3>
+                    </div>
+                    <div class="exam-selection-grid" id="pyqSubjectsContainer"></div>
+                </div>
+
+                <!-- View 3B: Mock Test Shift Papers List -->
+                <div id="viewMockShifts" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <button class="back-nav-btn" onclick="window.goToView('viewCategory')">← Back</button>
+                        <h3 id="mockShiftHeaderTitle" style="color: #818cf8; margin: 0;">Choose Exam Date & Shift</h3>
+                    </div>
+                    <div class="exam-selection-grid" id="mockShiftsContainer"></div>
+                </div>
+
+                <!-- View 4: Marks App Style Question Feed -->
+                <div id="viewQuestionFeed" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <button class="back-nav-btn" onclick="window.goToView('viewPyqSubjects')">← Back to Subjects</button>
+                        <h3 id="feedHeaderTitle" style="color: #818cf8; margin: 0;">Questions Feed</h3>
+                        <div class="stats-badge" id="feedStatsBadge">Solved: 0 / 0</div>
+                    </div>
+
+                    <div class="filter-bar-container">
+                        <div>
+                            <label style="color: var(--subtext-color, #94a3b8); font-size: 13px; margin-right: 8px;">Filter Year:</label>
+                            <select id="yearFilter" class="filter-select" onchange="window.applyFeedFilters()">
+                                <option value="ALL">All Years (Ascending)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="color: var(--subtext-color, #94a3b8); font-size: 13px; margin-right: 8px;">Difficulty:</label>
+                            <select id="diffFilter" class="filter-select" onchange="window.applyFeedFilters()">
+                                <option value="ALL">All Levels</option>
+                                <option value="Easy">Easy</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="feed-container" id="questionFeedList"></div>
+                </div>
+
+                <!-- View 5: PYQ Practice Mode -->
+                <div id="viewQuiz" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <button class="back-nav-btn" onclick="window.goToView('viewQuestionFeed')">← Back to Questions List</button>
+                        <div class="stats-badge" id="statsCounter">Solved: 0 / 0</div>
+                    </div>
+                    <div class="quiz-panel-card">
+                        <div class="quiz-meta-info">
+                            <span id="quizCategory">Loading...</span>
+                            <span id="difficultyBadge" class="diff-tag diff-easy">Easy</span>
+                            <span id="quizIndex">Question 1</span>
+                        </div>
+                        <div class="quiz-question-box" id="quizQuestionText">Loading Question...</div>
+                        <div class="options-list-grid" id="quizOptionsContainer"></div>
+                        <div class="solution-box hidden" id="quizExplanation"></div>
+                        <div class="quiz-actions-bar" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                            <span id="quizStatus" style="font-size: 13px; color: var(--subtext-color, #94a3b8);">Select an option to check answer</span>
+                            <button class="next-q-btn hidden" id="nextQuestionBtn" onclick="window.nextPyqQuestion()">Next Question →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 6: Real NTA Mock Test Interface -->
+                <div id="viewMockTest" class="step-view hidden">
+                    <div class="exam-header-nav">
+                        <span style="font-weight:700; color:#818cf8;" id="mockPaperDisplayTitle">⚡ Live JEE Shift Paper</span>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span class="mock-timer-badge" id="mockTimerDisplay">⏱️ 03:00:00</span>
+                            <button class="next-q-btn btn-danger" onclick="window.submitMockTest(true)">Submit Paper</button>
+                        </div>
+                    </div>
+
+                    <!-- Top Subject Tabs -->
+                    <div class="nta-subject-tabs" id="mockSubjectTabsContainer"></div>
+
+                    <div class="mock-container">
+                        <div class="quiz-panel-card">
+                            <div class="quiz-meta-info">
+                                <span id="mockQBadge">Question 1 of 25</span>
+                                <span id="mockActiveSubBadge" style="color:#818cf8; font-weight:bold;">Physics</span>
+                                <span style="color:#10b981; font-weight:600;">+4 / -1 Marks</span>
+                            </div>
+
+                            <div class="quiz-question-box" id="mockQuestionText">Loading question statement...</div>
+                            <div class="options-list-grid" id="mockOptionsContainer"></div>
+
+                            <div class="quiz-actions-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:20px;">
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="next-q-btn btn-warning" onclick="window.mockActionMarkReview()">Mark for Review</button>
+                                    <button class="next-q-btn btn-secondary" onclick="window.mockActionClearResponse()">Clear Response</button>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="next-q-btn btn-secondary" onclick="window.mockActionPrev()">← Prev</button>
+                                    <button class="next-q-btn" onclick="window.mockActionSaveNext()">Save & Next →</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mock-palette-box">
+                            <h4 style="margin: 0; color: var(--text-color, #ffffff); font-size: 15px;" id="paletteTitle">Physics Questions</h4>
+                            <div class="mock-palette-grid" id="mockPaletteContainer"></div>
+
+                            <div class="palette-legend">
+                                <div class="legend-item"><div class="legend-dot" style="background:var(--input-bg, #252538);"></div> Not Visited</div>
+                                <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div> Not Answered</div>
+                                <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Answered</div>
+                                <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div> Marked Review</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View 7: Full Score Card & Analytics -->
+                <div id="viewMockResult" class="step-view hidden">
+                    <div class="card" style="padding: 28px;">
+                        <h2 style="color:#818cf8; margin-bottom: 8px;">📊 Real Exam Score Card</h2>
+                        <p style="color: var(--subtext-color, #94a3b8); font-size: 14px;" id="resultPaperSubtitle">Summary for your shift attempt:</p>
+
+                        <div class="score-card-grid">
+                            <div class="score-box"><h4 id="resTotalScore">0 / 300</h4><p>Total Score</p></div>
+                            <div class="score-box"><h4 id="resAccuracy" style="color:#38bdf8;">0%</h4><p>Accuracy</p></div>
+                            <div class="score-box"><h4 id="resCorrect" style="color:#34d399;">0</h4><p>Correct (+4)</p></div>
+                            <div class="score-box"><h4 id="resIncorrect" style="color:#f87171;">0</h4><p>Incorrect (-1)</p></div>
+                            <div class="score-box"><h4 id="resUnattempted" style="color: var(--subtext-color, #94a3b8);">0</h4><p>Skipped</p></div>
+                        </div>
+
+                        <h3 style="margin-top:25px; color: var(--text-color, #ffffff); font-size:16px;">Subject-Wise Performance:</h3>
+                        <div class="sub-score-grid" id="subScoresContainer"></div>
+
+                        <div style="display:flex; gap:12px; margin-top:25px; flex-wrap:wrap;">
+                            <button class="next-q-btn" onclick="window.reviewMockSolutions()">💡 Review Detailed Solutions</button>
+                            <button class="next-q-btn btn-secondary" onclick="window.goToView('viewExams')">Go to Exams</button>
+                        </div>
+                    </div>
+
+                    <div class="feed-container hidden" id="mockReviewContainer" style="margin-top: 20px;"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating AI Assistant -->
+    <div id="aiChatBtn">💬</div>
+    <div id="aiChatWindow" class="ai-chat-hidden">
+        <div class="ai-chat-header" id="aiChatHeader">
+            <div class="ai-chat-title">
+                <span>Focusora AI Tutor ⚡</span>
+                <span class="ai-chat-status">● Online</span>
+            </div>
+            <button class="ai-close-btn" onclick="window.toggleAIChatBot()">&times;</button>
+        </div>
+        <div class="ai-chat-body" id="aiChatMessages">
+            <div class="ai-bot-msg">Namaste! Kisi bhi question, concept ya formula me doubt ho toh yahan puchiye.</div>
+        </div>
+        <div class="ai-chat-input-area">
+            <input type="text" id="aiUserInput" placeholder="Type your doubt..." onkeypress="window.handleAIAssistantEnter(event)">
+            <button id="aiSendBtn" onclick="window.sendAIDoubt()">➤</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        var firestoreDB = (typeof db !== 'undefined') ? db : firebase.firestore();
+
+        let dynamicExamConfigs = {};
+        let currentUser = null;
+        let currentExam = "";
+        let currentMode = ""; 
+        let currentShift = "";
+        let currentPyqSubject = "";
+
+        let allPyqQuestions = [];
+        let filteredPyqQuestions = [];
+        let currentPyqIndex = 0;
+        let userSolvedMap = {};
+
+        let allShiftQuestions = [];
+        let shiftSubjects = [];
+        let activeSubject = "";
+        let currentSubQIndex = 0;
+        let mockAnswers = {};
+        let mockTimerInterval = null;
+        let mockTimeRemaining = 180 * 60;
+
+        // Guaranteed Sidebar User Profile Render
+        firebase.auth().onAuthStateChanged(async (user) => {
+            currentUser = user;
+            const authBox = document.getElementById("authContainer");
+
+            if (user) {
+                const name = user.displayName || "Jalesh";
+                const photo = user.photoURL || "assets/image_1.png";
+                if (authBox) {
+                    authBox.innerHTML = `
+                        <a href="profile.html" class="sidebar-user-box" title="View Profile">
+                            <img src="${photo}" alt="Avatar" class="sidebar-avatar">
+                            <span class="sidebar-user-name">${name}</span>
+                        </a>
+                        <div class="sidebar-logout-btn" onclick="firebase.auth().signOut().then(() => window.location.href='home.html')">
+                            🚪 Logout
+                        </div>
+                    `;
+                }
+                loadUserSolvedProgress();
+            } else {
+                if (authBox) {
+                    authBox.innerHTML = `
+                        <a href="home.html" class="menu-item" style="color:#6366f1; font-weight:600;">🔑 Login / Sign In</a>
+                    `;
+                }
+            }
+        });
+
+        // Sync Exams from Firestore
+        firestoreDB.collection("exam_categories").onSnapshot(snap => {
+            dynamicExamConfigs = {};
+            const container = document.getElementById("examCardsContainer");
+            container.innerHTML = "";
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                dynamicExamConfigs[doc.id] = data;
+
+                const card = document.createElement("div");
+                card.className = "exam-card-item";
+                card.onclick = () => window.selectExam(doc.id);
+                card.innerHTML = `<h3>${data.title || doc.id}</h3><p>${(data.subjects || []).join(", ")}</p>`;
+                container.appendChild(card);
+            });
+        });
+
+        async function loadUserSolvedProgress() {
+            if (!currentUser) return;
+            try {
+                const snap = await firestoreDB.collection("users").doc(currentUser.uid).collection("solved_questions").get();
+                userSolvedMap = {};
+                snap.forEach(doc => { userSolvedMap[doc.id] = doc.data(); });
+                window.updatePyqStatsCounter();
+                if (filteredPyqQuestions.length > 0 && currentMode === "PYQ") renderPyqFeedList();
+            } catch (err) {
+                console.error("Progress fetch error:", err);
+            }
+        }
+
+        window.goToView = function(viewId) {
+            document.querySelectorAll(".step-view").forEach(el => el.classList.add("hidden"));
+            const target = document.getElementById(viewId);
+            if (target) target.classList.remove("hidden");
+
+            const aiBtn = document.getElementById("aiChatBtn");
+            const aiWin = document.getElementById("aiChatWindow");
+
+            if (viewId === "viewMockTest" || viewId === "viewQuiz") {
+                if (aiBtn) aiBtn.classList.add("hidden");
+                if (aiWin) aiWin.classList.add("ai-chat-hidden");
+            } else {
+                if (aiBtn) aiBtn.classList.remove("hidden");
+            }
+        };
+
+        window.selectExam = function(exam) {
+            currentExam = exam;
+            document.getElementById("categoryExamTitle").innerText = `${exam} Options`;
+            window.goToView("viewCategory");
+        };
+
+        window.selectMode = async function(mode) {
+            currentMode = mode;
+
+            if (mode === "PYQ") {
+                document.getElementById("pyqSubjectTitle").innerText = `${currentExam} - Choose Subject (PYQ)`;
+                const container = document.getElementById("pyqSubjectsContainer");
+                container.innerHTML = "";
+                const subjects = dynamicExamConfigs[currentExam]?.subjects || ["Physics", "Chemistry", "Maths"];
+
+                subjects.forEach(sub => {
+                    const card = document.createElement("div");
+                    card.className = "exam-card-item";
+                    card.innerHTML = `<h3>${sub}</h3><p>Practice Past Year Questions</p>`;
+                    card.onclick = () => window.loadPyqFeed(sub);
+                    container.appendChild(card);
+                });
+                window.goToView("viewPyqSubjects");
+            } else {
+                document.getElementById("mockShiftHeaderTitle").innerText = `${currentExam} - Select Shift Paper`;
+                window.goToView("viewMockShifts");
+                loadAvailableShiftPapers();
+            }
+        };
+
+        /* ==================== PYQ FEED & PRACTICE ==================== */
+        window.loadPyqFeed = async function(subject) {
+            currentPyqSubject = subject;
+            document.getElementById("feedHeaderTitle").innerText = `${currentExam} - ${subject} (PYQs)`;
+            window.goToView("viewQuestionFeed");
+
+            const feedContainer = document.getElementById("questionFeedList");
+            feedContainer.innerHTML = "<p style='color: var(--subtext-color, #94a3b8);'>Questions load ho rahe hain...</p>";
+
+            try {
+                const snapshot = await firestoreDB.collection("questions")
+                    .where("exam", "==", currentExam)
+                    .where("category", "==", "PYQ")
+                    .where("subject", "==", currentPyqSubject)
+                    .get();
+
+                allPyqQuestions = [];
+                snapshot.forEach(doc => {
+                    allPyqQuestions.push({ id: doc.id, ...doc.data() });
+                });
+
+                allPyqQuestions.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+                populatePyqYearDropdown();
+                window.applyFeedFilters();
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                feedContainer.innerHTML = "<p style='color:#ef4444;'>Questions load nahi ho sake.</p>";
+            }
+        };
+
+        function populatePyqYearDropdown() {
+            const yearSelect = document.getElementById("yearFilter");
+            yearSelect.innerHTML = `<option value="ALL">All Years (Ascending)</option>`;
+            const uniqueYears = [...new Set(allPyqQuestions.map(q => q.year).filter(Boolean))].sort((a, b) => a - b);
+            uniqueYears.forEach(yr => {
+                const opt = document.createElement("option"); opt.value = yr; opt.innerText = yr;
+                yearSelect.appendChild(opt);
+            });
+        }
+
+        window.applyFeedFilters = function() {
+            const selectedYear = document.getElementById("yearFilter").value;
+            const selectedDiff = document.getElementById("diffFilter").value;
+
+            filteredPyqQuestions = allPyqQuestions.filter(q => {
+                const matchYear = (selectedYear === "ALL") || (String(q.year) === String(selectedYear));
+                const matchDiff = (selectedDiff === "ALL") || (q.difficulty === selectedDiff);
+                return matchYear && matchDiff;
+            });
+
+            window.updatePyqStatsCounter();
+            renderPyqFeedList();
+        };
+
+        function renderPyqFeedList() {
+            const feedContainer = document.getElementById("questionFeedList");
+            feedContainer.innerHTML = "";
+
+            if (filteredPyqQuestions.length === 0) {
+                feedContainer.innerHTML = "<p style='color: var(--subtext-color, #94a3b8); text-align:center; padding: 30px;'>Is filter ke liye koi question uplabdh nahi hai.</p>";
+                return;
+            }
+
+            filteredPyqQuestions.forEach((q, index) => {
+                const isSolved = userSolvedMap[q.id];
+                let statusBadge = `<span class="q-feed-status status-unsolved">Unsolved</span>`;
+
+                if (isSolved) {
+                    statusBadge = isSolved.isCorrect 
+                        ? `<span class="q-feed-status status-correct">✓ Solved</span>` 
+                        : `<span class="q-feed-status status-wrong">✕ Attempted</span>`;
+                }
+
+                const diff = q.difficulty || "Easy";
+                const card = document.createElement("div");
+                card.className = "q-feed-card";
+                card.onclick = () => window.openPyqAtIndex(index);
+
+                card.innerHTML = `
+                    <div class="q-feed-header">
+                        <span style="color:#818cf8; font-weight:600;">Question #${index + 1} &bull; ${q.year || 'PYQ'}</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="diff-tag diff-${diff.toLowerCase()}">${diff}</span>
+                            ${statusBadge}
+                        </div>
+                    </div>
+                    <div class="q-feed-title">${q.questionText}</div>
+                    <div style="font-size:12px; color: var(--subtext-color, #94a3b8);">Click karke solve karein &rarr;</div>
+                `;
+                feedContainer.appendChild(card);
+            });
+        }
+
+        window.openPyqAtIndex = function(index) {
+            currentPyqIndex = index;
+            window.goToView("viewQuiz");
+            renderPyqQuestion();
+        };
+
+        function renderPyqQuestion() {
+            const qData = filteredPyqQuestions[currentPyqIndex];
+            document.getElementById("quizCategory").innerText = `${qData.exam} (${qData.year || 'PYQ'}) - ${qData.subject}`;
+            document.getElementById("quizIndex").innerText = `Question ${currentPyqIndex + 1} of ${filteredPyqQuestions.length}`;
+            document.getElementById("quizQuestionText").innerText = qData.questionText;
+
+            const diffEl = document.getElementById("difficultyBadge");
+            const diff = qData.difficulty || "Easy";
+            diffEl.innerText = diff;
+            diffEl.className = `diff-tag diff-${diff.toLowerCase()}`;
+
+            const optionsContainer = document.getElementById("quizOptionsContainer");
+            optionsContainer.innerHTML = "";
+            document.getElementById("quizExplanation").classList.add("hidden");
+            document.getElementById("nextQuestionBtn").classList.add("hidden");
+            document.getElementById("quizStatus").innerText = "Select an option to check answer";
+
+            const alreadySolved = userSolvedMap[qData.id];
+
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "quiz-opt-btn";
+                btn.innerText = `${String.fromCharCode(65 + idx)}. ${opt}`;
+                
+                if (alreadySolved) {
+                    btn.disabled = true;
+                    if (idx === qData.correctOptionIndex) btn.classList.add("correct");
+                    if (idx === alreadySolved.selectedOption && !alreadySolved.isCorrect) btn.classList.add("wrong");
+                } else {
+                    btn.onclick = () => handlePyqAnswer(idx, btn, qData);
+                }
+                optionsContainer.appendChild(btn);
+            });
+
+            if (alreadySolved) {
+                showPyqSolution(qData);
+                document.getElementById("nextQuestionBtn").classList.remove("hidden");
+            }
+        }
+
+        async function handlePyqAnswer(selectedIdx, btnElement, qData) {
+            const allOptionBtns = document.querySelectorAll(".quiz-opt-btn");
+            allOptionBtns.forEach(btn => btn.disabled = true);
+
+            const isCorrect = (selectedIdx === qData.correctOptionIndex);
+            if (isCorrect) {
+                btnElement.classList.add("correct");
+                document.getElementById("quizStatus").innerText = "✅ Sahi Jawab (+4 Marks)";
+            } else {
+                btnElement.classList.add("wrong");
+                if (allOptionBtns[qData.correctOptionIndex]) {
+                    allOptionBtns[qData.correctOptionIndex].classList.add("correct");
+                }
+                document.getElementById("quizStatus").innerText = "❌ Galat Jawab (-1 Mark)";
+            }
+
+            showPyqSolution(qData);
+            document.getElementById("nextQuestionBtn").classList.remove("hidden");
+
+            userSolvedMap[qData.id] = { isCorrect, selectedOption: selectedIdx };
+            window.updatePyqStatsCounter();
+
+            if (currentUser) {
+                try {
+                    const userRef = firestoreDB.collection("users").doc(currentUser.uid);
+
+                    await userRef.collection("solved_questions").doc(qData.id).set({
+                        isCorrect: isCorrect,
+                        selectedOption: selectedIdx,
+                        subject: qData.subject,
+                        exam: qData.exam,
+                        solvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await userRef.set({
+                        totalPyqAttempted: firebase.firestore.FieldValue.increment(1),
+                        totalPyqCorrect: isCorrect ? firebase.firestore.FieldValue.increment(1) : firebase.firestore.FieldValue.increment(0),
+                        questionsSolved: firebase.firestore.FieldValue.increment(1),
+                        totalQuestionsSolved: firebase.firestore.FieldValue.increment(1),
+                        solvedCount: firebase.firestore.FieldValue.increment(1),
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+
+                } catch (e) {
+                    console.error("User profile PYQ sync error:", e);
+                }
+            }
+        }
+
+        function showPyqSolution(qData) {
+            const expBox = document.getElementById("quizExplanation");
+            expBox.innerHTML = `<strong>💡 Solution / Explanation:</strong><br>${qData.explanation || 'No detailed solution provided.'}`;
+            expBox.classList.remove("hidden");
+        }
+
+        window.nextPyqQuestion = function() {
+            if (currentPyqIndex < filteredPyqQuestions.length - 1) {
+                currentPyqIndex++;
+                renderPyqQuestion();
+            } else {
+                alert("🎉 Sabhi questions complete ho gaye hain!");
+                window.goToView("viewQuestionFeed");
+            }
+        };
+
+        window.updatePyqStatsCounter = function() {
+            const total = filteredPyqQuestions.length;
+            let solvedCount = 0;
+            filteredPyqQuestions.forEach(q => { if (userSolvedMap[q.id]) solvedCount++; });
+            const text = `Solved: ${solvedCount} / ${total}`;
+            const b1 = document.getElementById("statsCounter");
+            const b2 = document.getElementById("feedStatsBadge");
+            if (b1) b1.innerText = text;
+            if (b2) b2.innerText = text;
+        };
+
+        /* ==================== REAL NTA LIVE MOCK TEST ==================== */
+        async function loadAvailableShiftPapers() {
+            const container = document.getElementById("mockShiftsContainer");
+            container.innerHTML = "<p style='color: var(--subtext-color, #94a3b8);'>Loading shift papers...</p>";
+
+            try {
+                const snap = await firestoreDB.collection("questions")
+                    .where("exam", "==", currentExam)
+                    .where("category", "==", "Mock Test")
+                    .get();
+
+                const shiftMap = {};
+                snap.forEach(doc => {
+                    const q = doc.data();
+                    const sName = q.shiftName || `${q.year || 2026} - Mock Paper`;
+                    if (!shiftMap[sName]) shiftMap[sName] = { count: 0, year: q.year || 2026 };
+                    shiftMap[sName].count++;
+                });
+
+                container.innerHTML = "";
+
+                if (Object.keys(shiftMap).length === 0) {
+                    shiftMap["2026 - 1st Day 1st Shift (Official NTA Mock)"] = { count: 75, year: 2026 };
+                }
+
+                Object.keys(shiftMap).forEach(sName => {
+                    const card = document.createElement("div");
+                    card.className = "exam-card-item";
+                    card.innerHTML = `
+                        <h3>📅 ${sName}</h3>
+                        <p>Total: ${shiftMap[sName].count} Questions (3 Hours • 300 Marks)</p>
+                        <p style="color:#818cf8; font-weight:bold; margin-top:8px;">Physics, Chemistry & Maths</p>
+                    `;
+                    card.onclick = () => startNtaMockPaper(sName);
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function startNtaMockPaper(shiftName) {
+            currentShift = shiftName;
+            document.getElementById("mockPaperDisplayTitle").innerText = `⚡ ${currentExam}: ${shiftName}`;
+
+            const snap = await firestoreDB.collection("questions")
+                .where("exam", "==", currentExam)
+                .where("category", "==", "Mock Test")
+                .get();
+
+            allShiftQuestions = [];
+            snap.forEach(doc => {
+                const q = doc.data();
+                if ((q.shiftName || "").trim() === shiftName.trim() || snap.size <= 75) {
+                    allShiftQuestions.push({ id: doc.id, ...q });
+                }
+            });
+
+            if (allShiftQuestions.length === 0) {
+                const subs = dynamicExamConfigs[currentExam]?.subjects || ["Physics", "Chemistry", "Maths"];
+                subs.forEach(s => {
+                    for (let i = 1; i <= 25; i++) {
+                        allShiftQuestions.push({
+                            id: `sample-${s}-${i}`,
+                            subject: s,
+                            questionText: `[${s}] Q${i}: Authentic examination level statement for ${shiftName}. Determine the correct answer.`,
+                            options: ["Option A value", "Option B value", "Option C value", "Option D value"],
+                            correctOptionIndex: (i % 4),
+                            difficulty: i % 2 === 0 ? "Moderate" : "Easy",
+                            explanation: `Detailed derivation and solution steps for ${s} Question #${i}.`
+                        });
+                    }
+                });
+            }
+
+            shiftSubjects = [...new Set(allShiftQuestions.map(q => q.subject))];
+            if (shiftSubjects.length === 0) shiftSubjects = ["Physics", "Chemistry", "Maths"];
+            activeSubject = shiftSubjects[0];
+
+            mockAnswers = {};
+            allShiftQuestions.forEach(q => {
+                mockAnswers[q.id] = { selectedOption: null, status: 'not-visited' };
+            });
+
+            renderSubjectTabs();
+            startMockTimer();
+            loadSubjectQuestions(activeSubject, 0);
+            window.goToView("viewMockTest");
+        }
+
+        function renderSubjectTabs() {
+            const container = document.getElementById("mockSubjectTabsContainer");
+            container.innerHTML = "";
+
+            shiftSubjects.forEach(sub => {
+                const subQs = allShiftQuestions.filter(q => q.subject === sub);
+                const btn = document.createElement("button");
+                btn.className = `nta-tab-btn ${sub === activeSubject ? 'active' : ''}`;
+                btn.innerText = `${sub} (${subQs.length})`;
+                btn.onclick = () => {
+                    activeSubject = sub;
+                    renderSubjectTabs();
+                    loadSubjectQuestions(activeSubject, 0);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function getActiveSubjectQuestions() {
+            return allShiftQuestions.filter(q => q.subject === activeSubject);
+        }
+
+        function loadSubjectQuestions(sub, index) {
+            currentSubQIndex = index;
+            const subQuestions = getActiveSubjectQuestions();
+            const qData = subQuestions[currentSubQIndex];
+            if (!qData) return;
+
+            if (mockAnswers[qData.id].status === 'not-visited') {
+                mockAnswers[qData.id].status = 'not-answered';
+            }
+
+            document.getElementById("mockQBadge").innerText = `Question ${currentSubQIndex + 1} of ${subQuestions.length}`;
+            document.getElementById("mockActiveSubBadge").innerText = sub;
+            document.getElementById("paletteTitle").innerText = `${sub} Palette (${subQuestions.length} Qs)`;
+            document.getElementById("mockQuestionText").innerText = qData.questionText;
+
+            const optContainer = document.getElementById("mockOptionsContainer");
+            optContainer.innerHTML = "";
+
+            qData.options.forEach((opt, optIdx) => {
+                const btn = document.createElement("button");
+                btn.className = "mock-opt-btn";
+                if (mockAnswers[qData.id].selectedOption === optIdx) {
+                    btn.classList.add("selected");
+                }
+                btn.innerText = `${String.fromCharCode(65 + optIdx)}. ${opt}`;
+                btn.onclick = () => {
+                    mockAnswers[qData.id].selectedOption = optIdx;
+                    loadSubjectQuestions(activeSubject, currentSubQIndex);
+                };
+                optContainer.appendChild(btn);
+            });
+
+            renderPaletteGrid();
+        }
+
+        function renderPaletteGrid() {
+            const container = document.getElementById("mockPaletteContainer");
+            container.innerHTML = "";
+            const subQuestions = getActiveSubjectQuestions();
+
+            subQuestions.forEach((q, idx) => {
+                const btn = document.createElement("button");
+                const st = mockAnswers[q.id]?.status || 'not-visited';
+                btn.className = `pal-btn ${st}`;
+                if (idx === currentSubQIndex) btn.classList.add("active");
+                btn.innerText = idx + 1;
+                btn.onclick = () => {
+                    loadSubjectQuestions(activeSubject, idx);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        window.mockActionSaveNext = function() {
+            const subQuestions = getActiveSubjectQuestions();
+            const qData = subQuestions[currentSubQIndex];
+
+            if (mockAnswers[qData.id].selectedOption !== null) {
+                mockAnswers[qData.id].status = 'answered';
+            } else {
+                mockAnswers[qData.id].status = 'not-answered';
+            }
+
+            if (currentSubQIndex < subQuestions.length - 1) {
+                loadSubjectQuestions(activeSubject, currentSubQIndex + 1);
+            } else {
+                const currSubIdx = shiftSubjects.indexOf(activeSubject);
+                if (currSubIdx < shiftSubjects.length - 1) {
+                    activeSubject = shiftSubjects[currSubIdx + 1];
+                    renderSubjectTabs();
+                    loadSubjectQuestions(activeSubject, 0);
+                } else {
+                    renderPaletteGrid();
+                    alert("Aapne sabhi sections complete kar liye hain! Final submit ke liye 'Submit Paper' dabayein.");
+                }
+            }
+        };
+
+        window.mockActionMarkReview = function() {
+            const subQuestions = getActiveSubjectQuestions();
+            const qData = subQuestions[currentSubQIndex];
+            mockAnswers[qData.id].status = 'review';
+
+            if (currentSubQIndex < subQuestions.length - 1) {
+                loadSubjectQuestions(activeSubject, currentSubQIndex + 1);
+            } else {
+                renderPaletteGrid();
+            }
+        };
+
+        window.mockActionClearResponse = function() {
+            const subQuestions = getActiveSubjectQuestions();
+            const qData = subQuestions[currentSubQIndex];
+            mockAnswers[qData.id].selectedOption = null;
+            mockAnswers[qData.id].status = 'not-answered';
+            loadSubjectQuestions(activeSubject, currentSubQIndex);
+        };
+
+        window.mockActionPrev = function() {
+            if (currentSubQIndex > 0) {
+                loadSubjectQuestions(activeSubject, currentSubQIndex - 1);
+            }
+        };
+
+        function startMockTimer() {
+            if (mockTimerInterval) clearInterval(mockTimerInterval);
+            mockTimeRemaining = 180 * 60;
+
+            mockTimerInterval = setInterval(() => {
+                mockTimeRemaining--;
+                const h = Math.floor(mockTimeRemaining / 3600);
+                const m = Math.floor((mockTimeRemaining % 3600) / 60);
+                const s = mockTimeRemaining % 60;
+                document.getElementById("mockTimerDisplay").innerText = 
+                    `⏱️ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+                if (mockTimeRemaining <= 0) {
+                    clearInterval(mockTimerInterval);
+                    alert("⏰ Time is UP! Paper auto-submit ho raha hai.");
+                    window.submitMockTest(false);
+                }
+            }, 1000);
+        }
+
+        window.submitMockTest = function(confirmPrompt = true) {
+            if (confirmPrompt) {
+                if (!confirm("Kya aap sach me paper submit karna chahte hain?")) return;
+            }
+            if (mockTimerInterval) clearInterval(mockTimerInterval);
+
+            let totalCorrect = 0, totalIncorrect = 0, totalUnattempted = 0;
+            const subjectStats = {};
+
+            shiftSubjects.forEach(s => {
+                subjectStats[s] = { correct: 0, incorrect: 0, unattempted: 0, score: 0 };
+            });
+
+            allShiftQuestions.forEach(q => {
+                const sub = q.subject || "Physics";
+                const sel = mockAnswers[q.id]?.selectedOption;
+
+                if (sel === null || sel === undefined) {
+                    totalUnattempted++;
+                    if (subjectStats[sub]) subjectStats[sub].unattempted++;
+                } else if (sel === q.correctOptionIndex) {
+                    totalCorrect++;
+                    if (subjectStats[sub]) subjectStats[sub].correct++;
+                } else {
+                    totalIncorrect++;
+                    if (subjectStats[sub]) subjectStats[sub].incorrect++;
+                }
+            });
+
+            const totalScore = (totalCorrect * 4) - (totalIncorrect * 1);
+            const totalAttempted = totalCorrect + totalIncorrect;
+            const accuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+
+            document.getElementById("resTotalScore").innerText = `${totalScore} / 300`;
+            document.getElementById("resAccuracy").innerText = `${accuracy}%`;
+            document.getElementById("resCorrect").innerText = totalCorrect;
+            document.getElementById("resIncorrect").innerText = totalIncorrect;
+            document.getElementById("resUnattempted").innerText = totalUnattempted;
+            document.getElementById("resultPaperSubtitle").innerText = `Performance Summary for: ${currentShift}`;
+
+            const subContainer = document.getElementById("subScoresContainer");
+            subContainer.innerHTML = "";
+
+            shiftSubjects.forEach(sub => {
+                const st = subjectStats[sub];
+                const subScore = (st.correct * 4) - (st.incorrect * 1);
+                const div = document.createElement("div");
+                div.className = "sub-score-card";
+                div.innerHTML = `
+                    <h4 style="color:#818cf8; margin-bottom:6px;">${sub}</h4>
+                    <div style="font-size:18px; font-weight:bold; margin-bottom:4px;">Score: ${subScore} Marks</div>
+                    <div style="font-size:12px; color: var(--subtext-color, #94a3b8);">✓ Correct: ${st.correct} | ✕ Wrong: ${st.incorrect} | Skipped: ${st.unattempted}</div>
+                `;
+                subContainer.appendChild(div);
+            });
+
+            document.getElementById("mockReviewContainer").classList.add("hidden");
+            window.goToView("viewMockResult");
+
+            // Guaranteed User Profile Document Update
+            if (currentUser) {
+                const userRef = firestoreDB.collection("users").doc(currentUser.uid);
+
+                // 1. History doc save
+                userRef.collection("mock_attempts").add({
+                    exam: currentExam,
+                    shiftName: currentShift,
+                    totalScore: Number(totalScore),
+                    accuracy: Number(accuracy),
+                    correct: Number(totalCorrect),
+                    incorrect: Number(totalIncorrect),
+                    unattempted: Number(totalUnattempted),
+                    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(e => console.error("History save error:", e));
+
+                // 2. Direct counters update on root profile
+                userRef.set({
+                    totalMockTestsGiven: firebase.firestore.FieldValue.increment(1),
+                    testsCompleted: firebase.firestore.FieldValue.increment(1),
+                    totalTests: firebase.firestore.FieldValue.increment(1),
+                    totalMockQuestionsAttempted: firebase.firestore.FieldValue.increment(totalAttempted),
+                    totalQuestionsSolved: firebase.firestore.FieldValue.increment(totalAttempted),
+                    questionsSolved: firebase.firestore.FieldValue.increment(totalAttempted),
+                    solvedCount: firebase.firestore.FieldValue.increment(totalAttempted),
+                    lastMockScore: Number(totalScore),
+                    score: Number(totalScore),
+                    lastMockExam: `${currentExam} - ${currentShift}`,
+                    accuracy: Number(accuracy),
+                    lastMockDate: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(() => {
+                    console.log("Mock Test Data successfully pushed to User Profile!");
+                }).catch(err => console.error("Profile set error:", err));
+            }
+        };
+
+        window.reviewMockSolutions = function() {
+            const reviewBox = document.getElementById("mockReviewContainer");
+            reviewBox.innerHTML = "<h3 style='color:#818cf8; margin-bottom:15px;'>Full Shift Solutions & Review:</h3>";
+
+            allShiftQuestions.forEach((q, idx) => {
+                const sel = mockAnswers[q.id]?.selectedOption;
+                const isCorrect = (sel === q.correctOptionIndex);
+                const isSkipped = (sel === null || sel === undefined);
+
+                let badge = `<span class="diff-tag" style="background:var(--input-bg, #252538); color: var(--subtext-color, #94a3b8);">Skipped (0)</span>`;
+                if (!isSkipped) {
+                    badge = isCorrect 
+                        ? `<span class="diff-tag diff-easy">✓ Correct (+4)</span>` 
+                        : `<span class="diff-tag diff-hard">✕ Incorrect (-1)</span>`;
+                }
+
+                const card = document.createElement("div");
+                card.className = "q-feed-card";
+                card.style.cursor = "default";
+
+                let optHtml = "";
+                q.options.forEach((opt, oIdx) => {
+                    let color = "var(--text-color, #cbd5e1)";
+                    let prefix = "";
+                    if (oIdx === q.correctOptionIndex) { color = "#34d399; font-weight:bold;"; prefix = " (Correct Answer)"; }
+                    if (oIdx === sel && !isCorrect) { color = "#f87171; font-weight:bold;"; prefix = " (Your Choice)"; }
+                    optHtml += `<div style="font-size:13px; color:${color}; margin-bottom:5px;">${String.fromCharCode(65 + oIdx)}. ${opt}${prefix}</div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="q-feed-header">
+                        <span style="font-weight:600; color:#818cf8;">[${q.subject}] Question #${idx + 1}</span>
+                        ${badge}
+                    </div>
+                    <div class="q-feed-title">${q.questionText}</div>
+                    <div style="margin: 12px 0;">${optHtml}</div>
+                    <div class="solution-box" style="margin-top:10px;"><strong>💡 Detailed Solution:</strong><br>${q.explanation || 'No explanation provided.'}</div>
+                `;
+                reviewBox.appendChild(card);
+            });
+
+            reviewBox.classList.remove("hidden");
+            reviewBox.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        /* ==================== AI FLOATING CHATBOT TUTOR ==================== */
+        window.toggleAIChatBot = function() {
+            document.getElementById("aiChatWindow").classList.toggle("ai-chat-hidden");
+        };
+
+        window.handleAIAssistantEnter = function(e) { if (e.key === "Enter") window.sendAIDoubt(); };
+
+        window.sendAIDoubt = async function() {
+            const inputField = document.getElementById("aiUserInput");
+            const doubtText = inputField.value.trim();
+            if (!doubtText) return;
+
+            appendChatMsg(doubtText, "ai-user-msg");
+            inputField.value = "";
+            const tempMsgId = appendChatMsg("Thinking...", "ai-bot-msg");
+
+            try {
+                const prompt = `You are an AI study tutor for Focusora students preparing for competitive exams like JEE/NEET. Keep explanations direct, step-by-step, conceptually rich, clear, and concise. Student Doubt: ${doubtText}`;
+                const response = await puter.ai.chat(prompt);
+                const replyText = typeof response === "object" ? (response.message?.content || response.text || JSON.stringify(response)) : response;
+                document.getElementById(tempMsgId).innerText = replyText;
+            } catch (err) {
+                document.getElementById(tempMsgId).innerText = "❌ Response fetch nahi ho paya. Please try again.";
+            }
+        };
+
+        function appendChatMsg(msg, className) {
+            const container = document.getElementById("aiChatMessages");
+            const msgEl = document.createElement("div");
+            const uniqueId = "ai-msg-" + Date.now();
+            msgEl.className = className;
+            msgEl.id = uniqueId;
+            msgEl.innerText = msg;
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+            return uniqueId;
+        }
+
+        (function setupDraggableElements() {
+            function makeDraggable(targetEl, handleEl, isIcon = false) {
+                let isDragging = false;
+                let startX, startY, initialLeft, initialTop;
+                let hasMoved = false;
+
+                handleEl.addEventListener("mousedown", (e) => {
+                    if (e.target.classList.contains("ai-close-btn")) return;
+                    isDragging = true;
+                    hasMoved = false;
+                    const rect = targetEl.getBoundingClientRect();
+                    targetEl.style.bottom = "auto";
+                    targetEl.style.right = "auto";
+                    targetEl.style.left = rect.left + "px";
+                    targetEl.style.top = rect.top + "px";
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialLeft = rect.left;
+                    initialTop = rect.top;
+                    document.addEventListener("mousemove", onMouseMove);
+                    document.addEventListener("mouseup", onMouseUp);
+                });
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+                    newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, newLeft));
+                    newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, newTop));
+                    targetEl.style.left = newLeft + "px";
+                    targetEl.style.top = newTop + "px";
+                }
+
+                function onMouseUp() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+                    if (isIcon && !hasMoved) window.toggleAIChatBot();
+                }
+            }
+
+            const chatWin = document.getElementById("aiChatWindow");
+            const chatHeader = document.getElementById("aiChatHeader");
+            const chatBtn = document.getElementById("aiChatBtn");
+            makeDraggable(chatWin, chatHeader, false);
+            makeDraggable(chatBtn, chatBtn, true);
+        })();
+    </script>
+</body>
+</html>

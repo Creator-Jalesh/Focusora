@@ -1,0 +1,194 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+}
+
+.landing-page {
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0052D4 0%, #4364F7 50%, #6FB1FC 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+}
+
+/* 🌟 White Card Setup */
+.welcome-container {
+    text-align: center;
+    max-width: 550px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    z-index: 2;
+    background: #ffffff; 
+    padding: 50px 40px;
+    border-radius: 30px; 
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); 
+}
+
+/* Original Title */
+.stylish-title {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #0052D4; 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Original Logo Blending Fix */
+.logo-graphic-container img {
+    width: 350px;
+    height: auto;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    filter: brightness(1.05) contrast(1.1); 
+    transition: transform 0.3s ease;
+}
+
+.logo-graphic-container img:hover {
+    transform: scale(1.05);
+}
+
+/* Let's Go Button */
+.lets-go-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 50px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(to right, #0052D4, #4364F7); 
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 10px 20px rgba(0, 82, 212, 0.4);
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.lets-go-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0, 82, 212, 0.6);
+}
+
+/* Side Quote Cards */
+.quote-card {
+    width: 260px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 25px 20px;
+    border-radius: 18px;
+    color: #ffffff; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 2;
+    animation: float 4s ease-in-out infinite;
+}
+
+.right-quote {
+    animation-delay: 2s; 
+}
+
+.quote-icon {
+    font-size: 1.5rem;
+}
+
+.quote-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* Floating Animation */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+@media (max-width: 900px) {
+    .quote-card {
+        display: none; 
+    }
+    .landing-page {
+        justify-content: center;
+    }
+    .stylish-title {
+        font-size: 2.5rem;
+    }
+    .logo-graphic-container img {
+        width: 280px;
+    }
+    .welcome-container {
+        padding: 40px 20px;
+    }
+}
+/* =========================================
+   🌙 DARK THEME STYLES 
+   ========================================= */
+body.dark-theme {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .sidebar,
+body.dark-theme .top-bar,
+body.dark-theme .card,
+body.dark-theme .stat-box {
+    background: #1e1e1e !important;
+    border-color: #333 !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.02) !important;
+}
+
+body.dark-theme h2, 
+body.dark-theme h3, 
+body.dark-theme .stat-num, 
+body.dark-theme .goal-text {
+    color: #ffffff !important;
+}
+
+body.dark-theme .menu-item {
+    color: #b0b0b0;
+}
+
+body.dark-theme .menu-item:hover, 
+body.dark-theme .menu-item.active {
+    background: #0052D4 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .date-badge {
+    background: #333 !important;
+    color: #4da3ff !important;
+}
+
+body.dark-theme .goal-item {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+body.dark-theme input {
+    background: #333 !important;
+    color: white !important;
+    border-color: #555 !important;
+}
+
+body.dark-theme input::placeholder {
+    color: #888 !important;
+}

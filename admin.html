@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focusora Admin Panel - Question & Shift Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f3f4f6; padding: 20px; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        h2, h3 { text-align: center; color: #333; margin-bottom: 20px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 2fr auto; gap: 15px; align-items: flex-end; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { background: #2563eb; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-green { background: #10b981; }
+        .btn-green:hover { background: #059669; }
+        .btn-purple { background: #8b5cf6; }
+        .btn-purple:hover { background: #7c3aed; }
+        .btn-cancel { background: #6b7280; display: none; margin-top: 5px; }
+        .btn-cancel:hover { background: #4b5563; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8fafc; font-weight: bold; }
+        .action-btn { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-edit { background: #f59e0b; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
+
+        .hidden { display: none !important; }
+
+        .mode-banner {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .banner-pyq { background: #e0f2fe; color: #0369a1; border-left: 4px solid #0284c7; }
+        .banner-mock { background: #ede9fe; color: #6d28d9; border-left: 4px solid #8b5cf6; }
+    </style>
+</head>
+<body>
+
+<!-- Section 1: Manage Exams & Subjects -->
+<div class="container">
+    <h3 id="examFormTitle">⚙️ Add / Manage Exams & Subjects</h3>
+    <form id="examConfigForm">
+        <input type="hidden" id="editExamDocId" value="">
+        <div class="grid-3">
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Exam Name</label>
+                <input type="text" id="newExamName" placeholder="e.g. NDA, CUET" required>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Subjects (Comma separated)</label>
+                <input type="text" id="newExamSubjects" placeholder="Maths, GAT, English" required>
+            </div>
+            <div>
+                <button type="submit" id="saveExamBtn" class="btn btn-green" style="margin:0; padding:10px 18px; width:auto;">Save Exam</button>
+                <button type="button" id="cancelExamBtn" class="btn btn-cancel" style="margin:0; padding:10px 14px; width:auto;">Cancel</button>
+            </div>
+        </div>
+    </form>
+
+    <table style="margin-top:20px;">
+        <thead>
+            <tr>
+                <th>Exam</th>
+                <th>Subjects</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="examConfigTableBody"></tbody>
+    </table>
+</div>
+
+<!-- Section 2: Smart Question & Shift Form -->
+<div class="container">
+    <h2 id="formTitle">📝 Add Questions & Shift Papers</h2>
+
+    <div id="modeBanner" class="mode-banner banner-pyq">
+        📌 <strong>Single Question Mode (PYQ):</strong> Yahan aap subject-wise ek-ek PYQ question add/edit kar sakte hain.
+    </div>
+
+    <form id="questionForm">
+        <input type="hidden" id="editDocId" value="">
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Exam Type</label>
+                <select id="exam"></select>
+            </div>
+            <div class="form-group">
+                <label>Category (Mode Switch)</label>
+                <select id="category">
+                    <option value="PYQ">PYQ (Subject-Wise Single Question)</option>
+                    <option value="Mock Test">Mock Test (Full Shift Paper - 75 Questions)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Dynamic Shift / Subject Row -->
+        <div class="grid-2" id="pyqMetaRow">
+            <div class="form-group">
+                <label>Subject</label>
+                <select id="subject"></select>
+            </div>
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" id="year" value="2024">
+            </div>
+        </div>
+
+        <div class="grid-2 hidden" id="mockMetaRow">
+            <div class="form-group">
+                <label>Paper / Shift Name</label>
+                <input type="text" id="mockShiftName" placeholder="e.g. 2026 - 1st Day 1st Shift">
+            </div>
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" id="mockYear" value="2026">
+            </div>
+        </div>
+
+        <!-- MODE A: PYQ SINGLE QUESTION -->
+        <div id="singleQuestionFields">
+            <div class="form-group">
+                <label>Difficulty Level</label>
+                <select id="difficulty">
+                    <option value="Easy">Easy</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Hard">Hard</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Question Statement</label>
+                <textarea id="questionText" rows="3" placeholder="Question statement type karein..."></textarea>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group"><label>Option 1</label><input type="text" id="option0"></div>
+                <div class="form-group"><label>Option 2</label><input type="text" id="option1"></div>
+                <div class="form-group"><label>Option 3</label><input type="text" id="option2"></div>
+                <div class="form-group"><label>Option 4</label><input type="text" id="option3"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Correct Option</label>
+                <select id="correctOptionIndex">
+                    <option value="0">Option 1</option>
+                    <option value="1">Option 2</option>
+                    <option value="2">Option 3</option>
+                    <option value="3">Option 4</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Detailed Solution / Explanation</label>
+                <textarea id="explanation" rows="3" placeholder="Step-by-step detailed solution..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn">Save Question to Database</button>
+            <button type="button" id="cancelBtn" class="btn btn-cancel">Cancel Edit</button>
+        </div>
+
+        <!-- MODE B: MOCK TEST 75 QUESTIONS BULK UPLOAD -->
+        <div id="bulkMockFields" class="hidden">
+            <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="margin:0;">Paste Full 75 Questions (Physics, Chemistry & Maths)</label>
+                    <button type="button" id="loadTemplateBtn" style="background:none; border:none; color:#7c3aed; cursor:pointer; font-weight:bold; font-size:13px;">📋 Load 75 Qs NTA Shift Template</button>
+                </div>
+                <textarea id="bulkJsonInput" rows="12" placeholder='[
+  {
+    "subject": "Physics",
+    "questionText": "Question statement...",
+    "options": ["A", "B", "C", "D"],
+    "correctOptionIndex": 0,
+    "difficulty": "Moderate",
+    "explanation": "Solution..."
+  }
+]'></textarea>
+            </div>
+
+            <button type="button" id="bulkUploadBtn" class="btn btn-purple">🚀 Upload Full Shift Paper (All Subjects)</button>
+        </div>
+    </form>
+
+    <hr style="margin: 40px 0 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
+
+    <h3>Manage Existing Questions & Papers</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Exam</th>
+                <th>Category / Shift</th>
+                <th>Subject</th>
+                <th>Year</th>
+                <th>Question</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="questionsTableBody"></tbody>
+    </table>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+
+<script>
+    var firestoreDB = (typeof db !== 'undefined') ? db : firebase.firestore();
+
+    let loadedExams = {};
+
+    const examSelect = document.getElementById("exam");
+    const subSelect = document.getElementById("subject");
+    const categorySelect = document.getElementById("category");
+    const pyqMetaRow = document.getElementById("pyqMetaRow");
+    const mockMetaRow = document.getElementById("mockMetaRow");
+    const singleBox = document.getElementById("singleQuestionFields");
+    const bulkBox = document.getElementById("bulkMockFields");
+    const banner = document.getElementById("modeBanner");
+    const examConfigTableBody = document.getElementById("examConfigTableBody");
+    const questionsTableBody = document.getElementById("questionsTableBody");
+
+    function syncModeView() {
+        const cat = categorySelect.value;
+        if (cat === "Mock Test") {
+            pyqMetaRow.classList.add("hidden");
+            mockMetaRow.classList.remove("hidden");
+            singleBox.classList.add("hidden");
+            bulkBox.classList.remove("hidden");
+            banner.className = "mode-banner banner-mock";
+            banner.innerHTML = "⚡ <strong>Real NTA Mock Test Mode:</strong> Yahan pura shift paper ek sath upload hota hai jisme Physics, Chemistry aur Maths teeno ek sath shamil hote hain!";
+        } else {
+            mockMetaRow.classList.add("hidden");
+            pyqMetaRow.classList.remove("hidden");
+            bulkBox.classList.add("hidden");
+            singleBox.classList.remove("hidden");
+            banner.className = "mode-banner banner-pyq";
+            banner.innerHTML = "📌 <strong>Single Question Mode (PYQ):</strong> Yahan aap subject-wise ek-ek PYQ question add/edit kar sakte hain.";
+        }
+    }
+    categorySelect.addEventListener("change", syncModeView);
+
+    function updateSubjectOptions(selectedSubject = null) {
+        const currentExamKey = examSelect.value;
+        subSelect.innerHTML = "";
+        const subjects = loadedExams[currentExamKey]?.subjects || [];
+        
+        subjects.forEach(sub => {
+            const opt = document.createElement("option");
+            opt.value = sub;
+            opt.innerText = sub;
+            if (selectedSubject && sub === selectedSubject) opt.selected = true;
+            subSelect.appendChild(opt);
+        });
+    }
+    examSelect.addEventListener("change", () => updateSubjectOptions());
+
+    // Admin Auth Guard
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+            alert("Pehle Focusora par login karein!");
+            window.location.href = "home.html";
+            return;
+        }
+        try {
+            const adminDoc = await firestoreDB.collection("admins").doc(user.uid).get();
+            if (!adminDoc.exists || adminDoc.data().role !== "admin") {
+                alert("Unauthorized Access!");
+                window.location.href = "home.html";
+                return;
+            }
+            startAdminListeners();
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    function startAdminListeners() {
+        // Sync Exam Categories
+        firestoreDB.collection("exam_categories").onSnapshot(snapshot => {
+            loadedExams = {};
+            examConfigTableBody.innerHTML = "";
+            const prevExam = examSelect.value;
+            examSelect.innerHTML = "";
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const id = doc.id;
+                loadedExams[id] = data;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${data.name || id}</strong></td>
+                    <td>${(data.subjects || []).join(", ")}</td>
+                    <td>
+                        <button class="action-btn btn-edit" onclick="editExamConfig('${id}')">Edit</button>
+                        <button class="action-btn btn-delete" onclick="deleteExamConfig('${id}')">Delete</button>
+                    </td>
+                `;
+                examConfigTableBody.appendChild(tr);
+
+                const opt = document.createElement("option");
+                opt.value = id;
+                opt.innerText = data.title || data.name || id;
+                if (id === prevExam) opt.selected = true;
+                examSelect.appendChild(opt);
+            });
+
+            updateSubjectOptions();
+        });
+
+        // Sync Questions Table
+        firestoreDB.collection("questions").onSnapshot(snapshot => {
+            questionsTableBody.innerHTML = "";
+            snapshot.forEach(doc => {
+                const q = doc.data();
+                const shiftOrCat = q.shiftName ? `${q.category} (${q.shiftName})` : q.category;
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${q.exam || '-'}</td>
+                    <td><strong>${shiftOrCat || 'PYQ'}</strong></td>
+                    <td>${q.subject || '-'}</td>
+                    <td>${q.year || '-'}</td>
+                    <td>${q.questionText ? (q.questionText.substring(0, 32) + '...') : '-'}</td>
+                    <td>
+                        <button class="action-btn btn-delete" onclick="deleteQuestion('${doc.id}')">Delete</button>
+                    </td>
+                `;
+                questionsTableBody.appendChild(row);
+            });
+        });
+    }
+
+    // Add / Update Exam Category
+    const examConfigForm = document.getElementById("examConfigForm");
+    const newExamNameInput = document.getElementById("newExamName");
+    const newExamSubjectsInput = document.getElementById("newExamSubjects");
+    const editExamDocIdInput = document.getElementById("editExamDocId");
+    const saveExamBtn = document.getElementById("saveExamBtn");
+    const cancelExamBtn = document.getElementById("cancelExamBtn");
+
+    examConfigForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const examName = newExamNameInput.value.trim().toUpperCase();
+        const subjects = newExamSubjectsInput.value.split(",").map(s => s.trim()).filter(Boolean);
+        const editId = editExamDocIdInput.value;
+
+        if (!examName || subjects.length === 0) {
+            alert("Exam name aur subjects bharna zaroori hai!");
+            return;
+        }
+
+        const payload = { name: examName, title: `🎯 ${examName}`, subjects: subjects };
+        try {
+            if (editId) {
+                await firestoreDB.collection("exam_categories").doc(editId).update(payload);
+                alert("Exam category update ho gayi!");
+            } else {
+                await firestoreDB.collection("exam_categories").doc(examName).set(payload);
+                alert("Naya Exam aur Subjects add ho gaye!");
+            }
+            resetExamForm();
+        } catch (err) { alert("Error: " + err.message); }
+    });
+
+    window.editExamConfig = function(id) {
+        const item = loadedExams[id];
+        if (!item) return;
+        editExamDocIdInput.value = id;
+        newExamNameInput.value = item.name || id;
+        newExamSubjectsInput.value = (item.subjects || []).join(", ");
+        document.getElementById("examFormTitle").innerText = "Edit Exam & Subjects";
+        saveExamBtn.innerText = "Update";
+        cancelExamBtn.style.display = "inline-block";
+    };
+
+    cancelExamBtn.addEventListener("click", resetExamForm);
+
+    function resetExamForm() {
+        examConfigForm.reset();
+        editExamDocIdInput.value = "";
+        document.getElementById("examFormTitle").innerText = "⚙️ Add / Manage Exams & Subjects";
+        saveExamBtn.innerText = "Save Exam";
+        cancelExamBtn.style.display = "none";
+    }
+
+    window.deleteExamConfig = async function(id) {
+        if (confirm(`Kya aap sach me ${id} exam delete karna chahte hain?`)) {
+            await firestoreDB.collection("exam_categories").doc(id).delete();
+            alert("Exam delete ho gaya!");
+        }
+    };
+
+    // 75 Questions Shift Template Generator (Physics, Chemistry & Maths)
+    document.getElementById("loadTemplateBtn").onclick = function() {
+        const sample = [];
+        const subjects = ["Physics", "Chemistry", "Maths"];
+
+        subjects.forEach(sub => {
+            for (let i = 1; i <= 25; i++) {
+                sample.push({
+                    subject: sub,
+                    questionText: `[${sub}] Question #${i}: Official NTA level standard question statement here.`,
+                    options: [`Option A value`, `Option B value`, `Option C value`, `Option D value`],
+                    correctOptionIndex: (i % 4),
+                    difficulty: i % 3 === 0 ? "Hard" : (i % 2 === 0 ? "Moderate" : "Easy"),
+                    explanation: `Step-by-step complete solution and derivation for ${sub} Question #${i}.`
+                });
+            }
+        });
+
+        document.getElementById("bulkJsonInput").value = JSON.stringify(sample, null, 2);
+    };
+
+    // Bulk 75 Qs Upload Handler
+    document.getElementById("bulkUploadBtn").onclick = async function() {
+        const jsonStr = document.getElementById("bulkJsonInput").value.trim();
+        const exam = examSelect.value;
+        const shiftName = document.getElementById("mockShiftName").value.trim() || "2026 - 1st Day 1st Shift";
+        const year = parseInt(document.getElementById("mockYear").value, 10) || 2026;
+
+        if (!jsonStr) {
+            alert("Pehle JSON data paste karein!");
+            return;
+        }
+
+        let questionsArray;
+        try {
+            questionsArray = JSON.parse(jsonStr);
+            if (!Array.isArray(questionsArray)) throw new Error("JSON array format hona chahiye.");
+        } catch (err) {
+            alert("❌ Invalid JSON syntax!\n" + err.message);
+            return;
+        }
+
+        const proceed = confirm(`Kya aap sach me ${questionsArray.length} questions ko "${exam} Mock Test: ${shiftName}" me upload karna chahte hain?`);
+        if (!proceed) return;
+
+        const btn = document.getElementById("bulkUploadBtn");
+        btn.disabled = true;
+        btn.innerText = "⏳ Uploading Full Paper...";
+
+        try {
+            let batch = firestoreDB.batch();
+            let count = 0;
+
+            for (let i = 0; i < questionsArray.length; i++) {
+                const item = questionsArray[i];
+                const docRef = firestoreDB.collection("questions").doc();
+                batch.set(docRef, {
+                    exam: exam,
+                    category: "Mock Test",
+                    shiftName: shiftName,
+                    subject: item.subject || "Physics",
+                    year: year,
+                    difficulty: item.difficulty || "Moderate",
+                    questionText: item.questionText || item.q || `Question ${i + 1}`,
+                    options: item.options || ["A", "B", "C", "D"],
+                    correctOptionIndex: (item.correctOptionIndex !== undefined) ? item.correctOptionIndex : 0,
+                    explanation: item.explanation || item.exp || "No explanation provided.",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+
+                if (count === 400) {
+                    await batch.commit();
+                    batch = firestoreDB.batch();
+                    count = 0;
+                }
+            }
+
+            if (count > 0) {
+                await batch.commit();
+            }
+
+            alert(`🎉 Success! Full Shift Paper "${shiftName}" (${questionsArray.length} questions) successfully add ho gaya!`);
+            document.getElementById("bulkJsonInput").value = "";
+        } catch (err) {
+            alert("Upload failed: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🚀 Upload Full Shift Paper (All Subjects)";
+        }
+    };
+
+    // Single Question (PYQ) Submit
+    const form = document.getElementById("questionForm");
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        if (categorySelect.value === "Mock Test") return;
+
+        const qText = document.getElementById("questionText").value.trim();
+        if (!qText) return alert("Question statement zaroori hai!");
+
+        const questionData = {
+            exam: examSelect.value,
+            category: "PYQ",
+            subject: subSelect.value,
+            year: parseInt(document.getElementById("year").value, 10),
+            difficulty: document.getElementById("difficulty").value,
+            questionText: qText,
+            options: [
+                document.getElementById("option0").value,
+                document.getElementById("option1").value,
+                document.getElementById("option2").value,
+                document.getElementById("option3").value
+            ],
+            correctOptionIndex: parseInt(document.getElementById("correctOptionIndex").value, 10),
+            explanation: document.getElementById("explanation").value,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        firestoreDB.collection("questions").add(questionData).then(() => {
+            alert("PYQ Question add ho gaya!");
+            form.reset();
+            categorySelect.value = "PYQ";
+            syncModeView();
+            updateSubjectOptions();
+        });
+    });
+
+    window.deleteQuestion = function(id) {
+        if (confirm("Delete this question?")) {
+            firestoreDB.collection("questions").doc(id).delete();
+        }
+    };
+
+    syncModeView();
+</script>
+
+</body>
+</html>

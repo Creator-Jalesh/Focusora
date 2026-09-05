@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focusora - Today's Goals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="goals.css">
+
+    <!-- Puter.js Free AI Library -->
+    <script src="https://js.puter.com/v2/"></script>
+
+    <!-- Floating Draggable AI Chatbot CSS -->
+    <style>
+        #aiChatBtn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: grab;
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+            z-index: 99999;
+            user-select: none;
+            touch-action: none;
+        }
+        #aiChatBtn:active {
+            cursor: grabbing;
+        }
+        #aiChatWindow {
+            position: fixed;
+            bottom: 92px;
+            right: 24px;
+            width: 350px;
+            height: 480px;
+            background: #181824;
+            border: 1px solid #2e2e48;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+            z-index: 99999;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            touch-action: none;
+        }
+        .ai-chat-hidden {
+            display: none !important;
+        }
+        .ai-chat-header {
+            background: #202032;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2e2e48;
+            cursor: move;
+            user-select: none;
+        }
+        .ai-chat-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+        .ai-chat-status {
+            font-size: 11px;
+            color: #10b981;
+            font-weight: 400;
+        }
+        .ai-close-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .ai-close-btn:hover {
+            color: #ffffff;
+        }
+        .ai-chat-body {
+            flex: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .ai-bot-msg, .ai-user-msg {
+            max-width: 82%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            line-height: 1.45;
+            word-wrap: break-word;
+        }
+        .ai-bot-msg {
+            background: #26263b;
+            color: #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            white-space: pre-wrap;
+        }
+        .ai-user-msg {
+            background: #4f46e5;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-chat-input-area {
+            display: flex;
+            padding: 10px 12px;
+            background: #202032;
+            border-top: 1px solid #2e2e48;
+            gap: 8px;
+        }
+        #aiUserInput {
+            flex: 1;
+            background: #13131c;
+            border: 1px solid #33334d;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #ffffff;
+            outline: none;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        #aiUserInput:focus {
+            border-color: #6366f1;
+        }
+        #aiSendBtn {
+            background: #4f46e5;
+            border: none;
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #aiSendBtn:hover {
+            background: #4338ca;
+        }
+    </style>
+
+    <!-- Firebase Core & Authentication & Database -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Config & Auth Script -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="assets/image_1.png" alt="Focusora Logo" class="sidebar-logo">
+            </div>
+            
+            <nav class="menu" id="sidebarMenu">
+                <a href="home.html" class="menu-item">🏠 Home</a>
+                <a href="leaderboard.html" class="menu-item" id="leaderboardLink">🏆 Leaderboard</a>
+                <a href="groups.html" class="menu-item" id="groupsLink">👥 Groups/Rooms</a>
+                <a href="goals.html" class="menu-item active" id="goalsLink">🎯 Today Goals</a>
+                <a href="exam.html" class="menu-item" id="examLink">📝 Exam Prep (PYQs)</a>
+            </nav>
+            
+            <div class="bottom-menu">
+                <button class="menu-item theme-toggle">🌓 Dark/Light</button>
+                <a href="profile.html" class="menu-item" id="profileLink">👤 User Profile</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <h2>🎯 Today's Goals & Productivity</h2>
+                <div class="date-badge" id="currentDateDisplay">Date: --/--/----</div>
+            </header>
+
+            <!-- Goals Content Area -->
+            <div class="goals-container">
+                
+                <!-- Left/Top Card: Checklist & Add Goal -->
+                <div class="card checklist-card">
+                    <div class="card-header">
+                        <h3>📋 Daily Target Checklist</h3>
+                        <span id="progressText">0/0 Completed</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+
+                    <!-- Goals List -->
+                    <div class="goals-list" id="goalsList">
+                        <!-- Dynamic Goals will load here -->
+                    </div>
+
+                    <!-- Add Goal Input Area -->
+                    <div class="add-goal-box">
+                        <input type="text" id="newGoalInput" placeholder="Add a new goal for today... (e.g. Finish Math Chapter 3)">
+                        <button id="addGoalBtn">➕ Add Goal</button>
+                    </div>
+                </div>
+
+                <!-- Bottom/Right Card: Statistics Section -->
+                <div class="card stats-card">
+                    <h3>📊 Statistics & Analytics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-num" id="totalGoalsNum">0</span>
+                            <span class="stat-label">Total Goals</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="completedGoalsNum" style="color: #22c55e;">0</span>
+                            <span class="stat-label">Completed</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="pendingGoalsNum" style="color: #f59e0b;">0</span>
+                            <span class="stat-label">Pending</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="efficiencyNum" style="color: #0052D4;">0%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Draggable Floating Icon & Chat Window -->
+    <div id="aiChatBtn">💬</div>
+    <div id="aiChatWindow" class="ai-chat-hidden">
+        <div class="ai-chat-header" id="aiChatHeader">
+            <div class="ai-chat-title">
+                <span>Focusora AI Tutor ⚡</span>
+                <span class="ai-chat-status">● Online</span>
+            </div>
+            <button class="ai-close-btn" onclick="toggleAIChatBot()">&times;</button>
+        </div>
+        <div class="ai-chat-body" id="aiChatMessages">
+            <div class="ai-bot-msg">Namaste! Daily goals ya kisi bhi concept me doubt ho to puchiye.</div>
+        </div>
+        <div class="ai-chat-input-area">
+            <input type="text" id="aiUserInput" placeholder="Type your doubt..." onkeypress="handleAIAssistantEnter(event)">
+            <button id="aiSendBtn" onclick="sendAIDoubt()">➤</button>
+        </div>
+    </div>
+
+    <!-- Chatbot Logic & Drag Script -->
+    <script>
+        function toggleAIChatBot() {
+            const chatWin = document.getElementById("aiChatWindow");
+            chatWin.classList.toggle("ai-chat-hidden");
+        }
+
+        function handleAIAssistantEnter(event) {
+            if (event.key === "Enter") {
+                sendAIDoubt();
+            }
+        }
+
+        async function sendAIDoubt() {
+            const inputField = document.getElementById("aiUserInput");
+            const doubtText = inputField.value.trim();
+            if (!doubtText) return;
+
+            appendChatMsg(doubtText, "ai-user-msg");
+            inputField.value = "";
+
+            const tempMsgId = appendChatMsg("Thinking...", "ai-bot-msg");
+
+            try {
+                const prompt = `You are an AI study assistant for Focusora students. Keep explanations direct, step-by-step, clear, and concise. Student Doubt: ${doubtText}`;
+                const response = await puter.ai.chat(prompt);
+                
+                const replyText = typeof response === "object" ? (response.message?.content || response.text || JSON.stringify(response)) : response;
+                document.getElementById(tempMsgId).innerText = replyText;
+
+            } catch (err) {
+                console.error("AI Generation Error:", err);
+                document.getElementById(tempMsgId).innerText = "❌ Response fetch nahi ho paya. Please try again.";
+            }
+        }
+
+        function appendChatMsg(msg, className) {
+            const container = document.getElementById("aiChatMessages");
+            const msgEl = document.createElement("div");
+            const uniqueId = "ai-msg-" + Date.now();
+            msgEl.className = className;
+            msgEl.id = uniqueId;
+            msgEl.innerText = msg;
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+            return uniqueId;
+        }
+
+        // Draggable Function for Chat Window & Chat Icon
+        (function setupDraggableElements() {
+            function makeDraggable(targetEl, handleEl, isIcon = false) {
+                let isDragging = false;
+                let startX, startY, initialLeft, initialTop;
+                let hasMoved = false;
+
+                handleEl.addEventListener("mousedown", (e) => {
+                    if (e.target.classList.contains("ai-close-btn")) return;
+
+                    isDragging = true;
+                    hasMoved = false;
+                    const rect = targetEl.getBoundingClientRect();
+
+                    targetEl.style.bottom = "auto";
+                    targetEl.style.right = "auto";
+                    targetEl.style.left = rect.left + "px";
+                    targetEl.style.top = rect.top + "px";
+
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialLeft = rect.left;
+                    initialTop = rect.top;
+
+                    document.addEventListener("mousemove", onMouseMove);
+                    document.addEventListener("mouseup", onMouseUp);
+                });
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+
+                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                        hasMoved = true;
+                    }
+
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+
+                    newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, newLeft));
+                    newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, newTop));
+
+                    targetEl.style.left = newLeft + "px";
+                    targetEl.style.top = newTop + "px";
+                }
+
+                function onMouseUp() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+
+                    if (isIcon && !hasMoved) {
+                        toggleAIChatBot();
+                    }
+                }
+            }
+
+            const chatWin = document.getElementById("aiChatWindow");
+            const chatHeader = document.getElementById("aiChatHeader");
+            const chatBtn = document.getElementById("aiChatBtn");
+
+            makeDraggable(chatWin, chatHeader, false);
+            makeDraggable(chatBtn, chatBtn, true);
+        })();
+    </script>
+
+    <script src="goals.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

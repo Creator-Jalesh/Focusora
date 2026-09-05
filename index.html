@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focusora - Study Together</title>
+    <!-- Sirf original Poppins font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<!-- Firebase Core & Authentication & Database -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<!-- Aapki Configuration File -->
+<script src="firebase-config.js"></script>
+<body>
+    <div class="landing-page">
+        
+        <!-- Left Side Quote Card -->
+        <div class="quote-card left-quote" id="leftQuote">
+            <span class="quote-icon">💡</span>
+            <p class="quote-text" id="leftText">Loading motivation...</p>
+        </div>
+
+        <!-- Center Welcome & Logo Container -->
+        <div class="welcome-container">
+            <div class="welcome-text-container">
+                <h1 class="stylish-title">WELCOME TO</h1>
+            </div>
+            
+            <div class="logo-graphic-container">
+                <img src="assets/image_1.png" alt="Focusora Logo">
+            </div>
+
+            <div class="button-container">
+                <a href="home.html" class="lets-go-btn">
+                    <span>Let's Go</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Side Quote Card -->
+        <div class="quote-card right-quote" id="rightQuote">
+            <span class="quote-icon">🚀</span>
+            <p class="quote-text" id="rightText">Loading motivation...</p>
+        </div>
+
+    </div>
+
+    <!-- Script -->
+    <script>
+        const quotes = [
+            "Focus on being productive instead of busy.",
+            "The secret of getting ahead is getting started.",
+            "It always seems impossible until it's done.",
+            "Success is the sum of small efforts, repeated day in and day out.",
+            "Don't watch the clock; do what it does. Keep going.",
+            "The expert in anything was once a beginner.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Dream big. Start small. Act now.",
+            "Your future is created by what you do today, not tomorrow.",
+            "Small progress each day adds up to big results.",
+            "Studying is an investment in your future.",
+            "Consistency is what transforms averages into excellence.",
+            "Discipline is choosing between what you want now and what you want most.",
+            "Action is the foundational key to all success.",
+            "Deep work is the superpower of the 21st century."
+        ];
+
+        window.onload = function() {
+            const leftEl = document.getElementById("leftText");
+            const rightEl = document.getElementById("rightText");
+
+            let idx1 = Math.floor(Math.random() * quotes.length);
+            let idx2 = Math.floor(Math.random() * quotes.length);
+            
+            while (idx2 === idx1) {
+                idx2 = Math.floor(Math.random() * quotes.length);
+            }
+
+            leftEl.innerText = '"' + quotes[idx1] + '"';
+            rightEl.innerText = '"' + quotes[idx2] + '"';
+        };
+    </script>
+</body>
+</html>

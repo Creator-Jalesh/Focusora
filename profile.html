@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focusora - Student Profile & Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <style>
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 10px 0;
+        }
+
+        .profile-header-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .profile-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #6366f1;
+            object-fit: cover;
+            background: var(--input-bg, #252538);
+        }
+
+        .profile-details h3 {
+            margin: 0 0 4px 0;
+            font-size: 22px;
+            color: var(--text-color, #ffffff);
+        }
+
+        .email-display-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--subtext-color, #94a3b8);
+            margin: 3px 0;
+            text-decoration: none;
+        }
+
+        .email-display-row:hover {
+            color: #818cf8;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: var(--input-bg, #202035);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-3px);
+            border-color: #6366f1;
+        }
+
+        .stat-box h4 {
+            font-size: 26px;
+            margin: 0 0 6px 0;
+            color: #818cf8;
+            font-weight: 700;
+        }
+
+        .stat-box p {
+            font-size: 12px;
+            margin: 0;
+            color: var(--subtext-color, #94a3b8);
+        }
+
+        .history-table-wrapper {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            color: var(--text-color, #f1f5f9);
+        }
+
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color, #2e2e48);
+        }
+
+        th {
+            background: var(--input-bg, #202035);
+            color: #818cf8;
+            font-weight: 600;
+        }
+
+        .badge-score {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* Purana Original Terms & Conditions and Support Styling */
+        .info-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: var(--card-bg, #181824);
+            border: 1px solid var(--border-color, #2e2e48);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .info-card h4 {
+            margin: 0 0 14px 0;
+            font-size: 17px;
+            color: #818cf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .terms-list {
+            padding-left: 0;
+            margin: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .terms-list li {
+            font-size: 13px;
+            color: var(--subtext-color, #94a3b8);
+            line-height: 1.6;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .terms-list li::before {
+            content: "✔";
+            position: absolute;
+            left: 0;
+            color: #6366f1;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .contact-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--input-bg, #202035);
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color, #2e2e48);
+            font-size: 13px;
+            color: var(--text-color, #ffffff);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            width: fit-content;
+        }
+
+        .contact-badge:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .sidebar-user-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-decoration: none;
+            color: inherit;
+        }
+        .sidebar-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #6366f1;
+        }
+        .sidebar-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color, #ffffff);
+        }
+        .sidebar-logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #ef4444;
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .sidebar-logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="assets/image_1.png" alt="Focusora Logo" class="sidebar-logo">
+            </div>
+            
+            <nav class="menu" id="sidebarMenu">
+                <a href="home.html" class="menu-item">🏠 Home</a>
+                <a href="leaderboard.html" class="menu-item">🏆 Leaderboard</a>
+                <a href="groups.html" class="menu-item">👥 Groups/Rooms</a>
+                <a href="goals.html" class="menu-item">🎯 Today Goals</a>
+                <a href="exam.html" class="menu-item">📝 Exam Prep (PYQs)</a>
+            </nav>
+            
+            <div class="bottom-menu">
+                <button class="menu-item theme-toggle">🌓 Dark/Light</button>
+                <div id="authContainer" style="display: flex; flex-direction: column; gap: 4px; margin-top: 10px;"></div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h2>👤 Student Profile & Analytics</h2>
+            </header>
+
+            <div class="profile-container">
+                
+                <!-- 1. User Header Info -->
+                <div class="card">
+                    <div class="profile-header-box">
+                        <img src="assets/image_1.png" alt="User Avatar" class="profile-avatar-large" id="profileUserAvatar">
+                        <div class="profile-details">
+                            <h3 id="profileUserName">Jalesh</h3>
+                            
+                            <a href="#" class="email-display-row" id="emailLink">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M22 6C22 4.9 21.1 4 20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6ZM20 6L12 11L4 6H20ZM20 18H4V8L12 13L20 8V18Z" fill="#EA4335"/>
+                                </svg>
+                                <span id="profileUserEmail">jalesh030@gmail.com</span>
+                            </a>
+
+                            <p style="color:#6366f1; margin-top:2px; font-weight:600;" id="profileTargetExam">Target: JEE Main 2026</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Exam Prep & Mock Test Analytics -->
+                <div class="card">
+                    <h3 style="margin:0 0 4px 0; color: #818cf8; font-size:18px;">📊 Exam Prep & Mock Test Analytics</h3>
+                    <p style="color: var(--subtext-color, #94a3b8); font-size:13px; margin:0;">Realtime performance summary of your tests & practice sessions:</p>
+
+                    <div class="analytics-grid">
+                        <div class="stat-box">
+                            <h4 id="statMockTests">0</h4>
+                            <p>Mock Tests Attempted</p>
+                        </div>
+                        <div class="stat-box">
+                            <h4 id="statLastScore">0 / 300</h4>
+                            <p>Latest Test Score</p>
+                        </div>
+                        <div class="stat-box">
+                            <h4 id="statAccuracy" style="color:#38bdf8;">0%</h4>
+                            <p>Overall Accuracy</p>
+                        </div>
+                        <div class="stat-box">
+                            <h4 id="statTotalSolved" style="color:#34d399;">0</h4>
+                            <p>Total Questions Solved</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Mock Test History Table -->
+                <div class="card">
+                    <h3 style="margin:0 0 6px 0; color: #818cf8; font-size:17px;">📜 Recent Mock Test Shift Attempts</h3>
+                    <p style="color: var(--subtext-color, #94a3b8); font-size:12px; margin:0;">Detailed history of submitted mock papers:</p>
+
+                    <div class="history-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Exam / Shift Paper</th>
+                                    <th>Score</th>
+                                    <th>Accuracy</th>
+                                    <th>Correct</th>
+                                    <th>Wrong</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mockHistoryTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align:center; color:var(--subtext-color, #94a3b8); padding:20px;">Abhi tak koi mock test submit nahi kiya hai.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. Purana Original Terms & Conditions and Support Cards -->
+                <div class="info-cards-grid">
+                    <div class="info-card">
+                        <h4>📜 Terms & Conditions</h4>
+                        <ul class="terms-list">
+                            <li><strong>Account Responsibility:</strong> Focusora account ke credentials aur session activities confidential rakhna user ki zimmedari hai.</li>
+                            <li><strong>Fair Study Environment:</strong> Study rooms aur peer sessions me abusive language, inappropriate behavior, ya spam strictly prohibited hai.</li>
+                            <li><strong>Exam Integrity:</strong> Mock test engine me kisi bhi tarah ke unverified scripts, dev-tools manipulation ya automated bots ka use karna banned hai.</li>
+                            <li><strong>Data & Privacy:</strong> Aapka exam data, study timers, aur analytics leaderboard rankings aur personal performance report ke liye use hote hain.</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-card">
+                        <h4>📞 Contact Information & Support</h4>
+                        <p style="margin-bottom: 14px;">Kisi bhi query, feature feedback ya technical help ke liye humari team se contact karein:</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <a href="mailto:focusora01@gmail.com" class="contact-badge">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M22 6C22 4.9 21.1 4 20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6ZM20 6L12 11L4 6H20ZM20 18H4V8L12 13L20 8V18Z" fill="#EA4335"/>
+                                </svg>
+                                <span>focusora01@gmail.com</span>
+                            </a>
+
+                            <a href="https://www.instagram.com/focusora01?igsi=MTVvMnoxY2pya3JybA==" target="_blank" class="contact-badge" style="color:#f43f5e; border-color: rgba(244, 63, 94, 0.3);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                                </svg>
+                                <span>Instagram: @focusora01</span>
+                            </a>
+                        </div>
+
+                        <p style="margin-top: 18px; font-size: 12px; color: var(--subtext-color, #94a3b8);">Focusora Platform &bull; All Rights Reserved (2026)</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        var firestoreDB = (typeof db !== 'undefined') ? db : firebase.firestore();
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            const authBox = document.getElementById("authContainer");
+            const name = user ? (user.displayName || "Jalesh") : "Jalesh";
+            const userEmail = user ? (user.email || "jalesh030@gmail.com") : "jalesh030@gmail.com";
+            const photo = user && user.photoURL ? user.photoURL : "assets/image_1.png";
+
+            if (authBox) {
+                authBox.innerHTML = `
+                    <a href="profile.html" class="sidebar-user-box" title="View Profile">
+                        <img src="${photo}" alt="Avatar" class="sidebar-avatar">
+                        <span class="sidebar-user-name">${name}</span>
+                    </a>
+                    <div class="sidebar-logout-btn" onclick="firebase.auth().signOut().then(() => window.location.href='home.html')">
+                        🚪 Logout
+                    </div>
+                `;
+            }
+
+            document.getElementById("profileUserName").innerText = name;
+            document.getElementById("profileUserEmail").innerText = userEmail;
+            document.getElementById("emailLink").href = `mailto:${userEmail}`;
+            document.getElementById("profileUserAvatar").src = photo;
+
+            if (!user) return;
+
+            try {
+                const userDoc = await firestoreDB.collection("users").doc(user.uid).get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+
+                    const mockTests = data.totalMockTestsGiven || data.testsCompleted || 0;
+                    const lastScore = (data.lastMockScore !== undefined) ? data.lastMockScore : (data.score || 0);
+                    const accuracy = data.accuracy || 0;
+                    const totalSolved = data.totalQuestionsSolved || data.questionsSolved || data.totalPyqAttempted || 0;
+
+                    document.getElementById("statMockTests").innerText = mockTests;
+                    document.getElementById("statLastScore").innerText = `${lastScore} / 300`;
+                    document.getElementById("statAccuracy").innerText = `${accuracy}%`;
+                    document.getElementById("statTotalSolved").innerText = totalSolved;
+
+                    if (data.lastMockExam) {
+                        document.getElementById("profileTargetExam").innerText = `Last Exam: ${data.lastMockExam}`;
+                    }
+                }
+
+                const historySnap = await firestoreDB.collection("users").doc(user.uid)
+                    .collection("mock_attempts")
+                    .limit(10)
+                    .get();
+
+                const historyTbody = document.getElementById("mockHistoryTableBody");
+                if (!historySnap.empty) {
+                    historyTbody.innerHTML = "";
+                    historySnap.forEach(doc => {
+                        const h = doc.data();
+                        let dateStr = "Recent";
+                        if (h.submittedAt && h.submittedAt.toDate) {
+                            dateStr = h.submittedAt.toDate().toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', year: 'numeric'
+                            });
+                        }
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${dateStr}</td>
+                            <td><strong>${h.shiftName || h.exam || 'JEE Main Paper'}</strong></td>
+                            <td><span class="badge-score">${h.totalScore !== undefined ? h.totalScore : 0} / 300</span></td>
+                            <td style="color:#38bdf8; font-weight:600;">${h.accuracy || 0}%</td>
+                            <td style="color:#34d399;">✓ ${h.correct || 0}</td>
+                            <td style="color:#f87171;">✕ ${h.incorrect || 0}</td>
+                        `;
+                        historyTbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Profile analytics error:", err);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f4f6f9;
+    color: #333;
+}
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar-logo {
+    width: 120px;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+.menu-item {
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.menu-item:hover, .menu-item.active {
+    background: #0052D4;
+    color: #ffffff;
+}
+
+.menu-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.bottom-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Top Bar */
+.top-bar {
+    background: #ffffff;
+    padding: 15px 25px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    margin-bottom: 20px;
+}
+
+.timer-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.timer {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0052D4;
+}
+
+.stop-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.group-badge {
+    background: #e6f0fa;
+    color: #0052D4;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.saved-time-badge {
+    background: #e6f0fa;
+    color: #0052D4;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* Group Content Area & Choice Overlay */
+.group-content-area {
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.group-choice-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    border-radius: 12px;
+}
+
+.choice-card {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+
+.choice-card h2 {
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.choice-card p {
+    color: #64748b;
+    margin-bottom: 30px;
+}
+
+.choice-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.action-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.action-box h3 {
+    font-size: 1.1rem;
+    color: #334155;
+}
+
+.action-box input {
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.action-box input:focus {
+    border-color: #0052D4;
+}
+
+.primary-btn, .secondary-btn {
+    background: #0052D4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.primary-btn:hover, .secondary-btn:hover {
+    background: #003db3;
+}
+
+.divider {
+    font-weight: 700;
+    color: #94a3b8;
+}
+/* Active Workspace (Cams + Chat) */
+.active-group-workspace {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+    height: calc(100vh - 120px);
+}
+.cam-grid {
+    flex: 3;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+    overflow-y: auto;
+    align-content: start;
+}
+
+.cam-box {
+    background: #222;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.cam-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.dummy-box {
+    background: #e9ecef;
+    color: #666;
+    border: 2px dashed #cbd5e1;
+}
+
+.user-tag {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Chat Section Styling */
+.chat-section {
+    flex: 1;
+    min-width: 280px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.chat-header {
+    background: #0052D4;
+    color: white;
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8fafc;
+}
+
+.chat-msg {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    max-width: 85%;
+    word-break: break-word;
+}
+
+.chat-msg.system {
+    background: #e2e8f0;
+    color: #475569;
+    align-self: center;
+    text-align: center;
+    font-size: 0.75rem;
+    width: 100%;
+}
+
+.chat-msg.incoming {
+    background: #ffffff;
+    color: #1e293b;
+    align-self: flex-start;
+    border: 1px solid #e2e8f0;
+}
+
+.chat-msg.outgoing {
+    background: #0052D4;
+    color: #ffffff;
+    align-self: flex-end;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    gap: 8px;
+}
+
+.chat-input-area input {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    outline: none;
+    font-size: 0.85rem;
+}
+
+.chat-input-area input:focus {
+    border-color: #0052D4;
+}
+
+.chat-input-area button {
+    background: #0052D4;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.chat-input-area button:hover {
+    background: #003db3;
+}
+
+/* =========================================
+   🌙 DARK THEME STYLES (Fixed text & card colors)
+   ========================================= */
+body.dark-theme {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .sidebar,
+body.dark-theme .top-bar,
+body.dark-theme .card,
+body.dark-theme .stat-box {
+    background: #1e1e1e !important;
+    border-color: #333 !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Fix for Study Groups & Rooms choice card overlay in dark mode */
+body.dark-theme .group-choice-overlay {
+    background: rgba(18, 18, 18, 0.85) !important;
+}
+
+body.dark-theme .choice-card {
+    background: #1e1e1e !important;
+    border: 1px solid #333 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-theme h2, 
+body.dark-theme h3, 
+body.dark-theme .stat-num, 
+body.dark-theme .goal-text,
+body.dark-theme .choice-card h2,
+body.dark-theme .action-box h3 {
+    color: #ffffff !important;
+}
+
+body.dark-theme .choice-card p {
+    color: #a0a0a0 !important;
+}
+
+body.dark-theme .menu-item {
+    color: #b0b0b0;
+}
+
+body.dark-theme .menu-item:hover, 
+body.dark-theme .menu-item.active {
+    background: #0052D4 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .date-badge {
+    background: #333 !important;
+    color: #4da3ff !important;
+}
+body.dark-theme .goal-item {
+    background: #2a2a2a !important;
+    border-color: #444 !important;
+}
+
+body.dark-theme input {
+    background: #333 !important;
+    color: white !important;
+    border-color: #555 !important;
+}
+
+body.dark-theme input::placeholder {
+    color: #888 !important;
+}
