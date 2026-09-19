@@ -3,60 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focusora - Home Workspace</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Focusora - Live Study Sphere</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="home.css">
+
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Puter.js Free AI Library -->
     <script src="https://js.puter.com/v2/"></script>
 
-    <!-- Floating Draggable AI Chatbot & Video Badge CSS -->
     <style>
-        /* Video Container & Dynamic Username Badge Styling */
-        .cam-card {
-            position: relative;
-            background: #181824;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #2e2e48;
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0b0c10;
+            color: #f1f5f9;
         }
 
-        .cam-card video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 12px;
+        .mono-num {
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .user-cam-badge {
+        .cyber-grid-bg {
+            background-image: radial-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Locked state for sidebar links during focus */
+        .menu-item.locked {
+            opacity: 0.45 !important;
+            cursor: not-allowed !important;
+            pointer-events: auto !important;
+        }
+
+        @keyframes flameFlicker {
+            0%, 100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.5)); }
+            50% { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.7)); }
+        }
+        .anim-flame {
+            animation: flameFlicker 2s infinite ease-in-out;
+        }
+
+        @keyframes floatSpark {
+            0% { transform: translateY(0) scale(0.6); opacity: 1; }
+            100% { transform: translateY(-70px) scale(1.3); opacity: 0; }
+        }
+        .reaction-particle {
             position: absolute;
-            bottom: 12px;
-            left: 12px;
-            background: rgba(15, 15, 23, 0.75);
-            backdrop-filter: blur(6px);
-            color: #ffffff;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 10;
+            pointer-events: none;
+            animation: floatSpark 1s ease-out forwards;
+            font-size: 22px;
+            z-index: 999;
         }
 
-        .user-cam-badge .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #10b981;
-        }
-
+        /* Draggable AI Chatbot */
         #aiChatBtn {
             position: fixed;
             bottom: 24px;
@@ -76,9 +78,7 @@
             user-select: none;
             touch-action: none;
         }
-        #aiChatBtn:active {
-            cursor: grabbing;
-        }
+        #aiChatBtn:active { cursor: grabbing; }
         #aiChatWindow {
             position: fixed;
             bottom: 92px;
@@ -93,12 +93,9 @@
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
             z-index: 99999;
             overflow: hidden;
-            font-family: 'Poppins', sans-serif;
             touch-action: none;
         }
-        .ai-chat-hidden {
-            display: none !important;
-        }
+        .ai-chat-hidden { display: none !important; }
         .ai-chat-header {
             background: #202032;
             padding: 12px 16px;
@@ -117,153 +114,247 @@
             flex-direction: column;
             pointer-events: none;
         }
-        .ai-chat-status {
-            font-size: 11px;
-            color: #10b981;
-            font-weight: 400;
-        }
-        .ai-close-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 22px;
-            cursor: pointer;
-            line-height: 1;
-        }
-        .ai-close-btn:hover {
-            color: #ffffff;
-        }
-        .ai-chat-body {
-            flex: 1;
-            padding: 14px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 13px;
-        }
-        .ai-bot-msg, .ai-user-msg {
-            max-width: 82%;
-            padding: 10px 12px;
-            border-radius: 12px;
-            line-height: 1.45;
-            word-wrap: break-word;
-        }
-        .ai-bot-msg {
-            background: #26263b;
-            color: #e2e8f0;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-            white-space: pre-wrap;
-        }
-        .ai-user-msg {
-            background: #4f46e5;
-            color: #ffffff;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-        .ai-chat-input-area {
-            display: flex;
-            padding: 10px 12px;
-            background: #202032;
-            border-top: 1px solid #2e2e48;
-            gap: 8px;
-        }
-        #aiUserInput {
-            flex: 1;
-            background: #13131c;
-            border: 1px solid #33334d;
-            padding: 8px 12px;
-            border-radius: 8px;
-            color: #ffffff;
-            outline: none;
-            font-size: 13px;
-            font-family: inherit;
-        }
-        #aiUserInput:focus {
-            border-color: #6366f1;
-        }
-        #aiSendBtn {
-            background: #4f46e5;
-            border: none;
-            color: #ffffff;
-            padding: 8px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        #aiSendBtn:hover {
-            background: #4338ca;
-        }
+        .ai-chat-status { font-size: 11px; color: #10b981; font-weight: 400; }
+        .ai-close-btn { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1; }
+        .ai-close-btn:hover { color: #ffffff; }
+        .ai-chat-body { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+        .ai-bot-msg, .ai-user-msg { max-width: 82%; padding: 10px 12px; border-radius: 12px; line-height: 1.45; word-wrap: break-word; }
+        .ai-bot-msg { background: #26263b; color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; white-space: pre-wrap; }
+        .ai-user-msg { background: #4f46e5; color: #ffffff; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-chat-input-area { display: flex; padding: 10px 12px; background: #202032; border-top: 1px solid #2e2e48; gap: 8px; }
+        #aiUserInput { flex: 1; background: #13131c; border: 1px solid #33334d; padding: 8px 12px; border-radius: 8px; color: #ffffff; outline: none; font-size: 13px; }
+        #aiUserInput:focus { border-color: #6366f1; }
+        #aiSendBtn { background: #4f46e5; border: none; color: #ffffff; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        #aiSendBtn:hover { background: #4338ca; }
     </style>
 
-    <!-- Firebase Core & Authentication & Database -->
+    <!-- Firebase Core & Firestore -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <!-- PeerJS CDN -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-    <!-- Firebase Config & Auth Script -->
     <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
 </head>
-<body>
-    <div class="dashboard-container">
+<body class="bg-[#0c0d14] text-slate-100 cyber-grid-bg min-h-screen">
+    <div class="dashboard-container flex">
         
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-container">
-                <img src="assets/image_1.png" alt="Focusora Logo" class="sidebar-logo">
+        <aside class="sidebar min-h-screen w-64 bg-[#12131c] border-r border-[#202230] p-4 flex flex-col justify-between hidden md:flex">
+            <div>
+                <div class="logo-container pb-6 border-b border-[#202230] mb-6 flex items-center gap-3">
+                    <img src="assets/image_1.png" alt="Focusora Logo" class="sidebar-logo h-9 w-auto">
+                    <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-violet-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">Focusora</span>
+                </div>
+                
+                <nav class="menu flex flex-col gap-2" id="sidebarMenu">
+                    <a href="home.html" class="menu-item active flex items-center gap-3 px-3 py-2.5 rounded-lg bg-violet-600/20 text-violet-400 border border-violet-500/30 font-medium text-sm">
+                        <span>⚡</span> Study Sphere
+                    </a>
+                    <a href="leaderboard.html" class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 transition text-sm" id="leaderboardLink">
+                        <span>🏆</span> Leaderboard
+                    </a>
+                    <a href="groups.html" class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 transition text-sm" id="groupsLink">
+                        <span>👥</span> Focus Rooms
+                    </a>
+                    <a href="goals.html" class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 transition text-sm" id="goalsLink">
+                        <span>🎯</span> Today Goals
+                    </a>
+                    <a href="exam.html" class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 transition text-sm" id="examLink">
+                        <span>📝</span> Exam Prep (PYQs)
+                    </a>
+                </nav>
             </div>
             
-            <nav class="menu" id="sidebarMenu">
-                <a href="home.html" class="menu-item active">🏠 Home</a>
-                <a href="leaderboard.html" class="menu-item" id="leaderboardLink">🏆 Leaderboard</a>
-                <a href="groups.html" class="menu-item" id="groupsLink">👥 Groups/Rooms</a>
-                <a href="goals.html" class="menu-item" id="goalsLink">🎯 Today Goals</a>
-                <a href="exam.html" class="menu-item" id="examLink">📝 Exam Prep (PYQs)</a>
-            </nav>
-            
-            <div class="bottom-menu">
-                <button class="menu-item theme-toggle">🌓 Dark/Light</button>
-                <div id="authContainer" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                    <a href="profile.html" class="menu-item" id="profileLink">👤 User Profile</a>
+            <div class="bottom-menu pt-4 border-t border-[#202230] flex flex-col gap-2">
+                <button class="menu-item theme-toggle flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/30 text-slate-300 text-xs hover:bg-slate-800/60 transition">
+                    <span>Theme Mode</span>
+                    <span>🌓</span>
+                </button>
+                <div id="authContainer">
+                    <a href="profile.html" class="menu-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/40 text-sm" id="profileLink">
+                        <span>👤</span> <span id="sidebarUserName">My Profile</span>
+                    </a>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="top-bar">
-                <h2>🚀 Solo Focus Workspace</h2>
-                <div id="savedTimeDisplay" class="saved-time-badge">Today's Total: 00:00:00</div>
-            </header>
-
-            <div class="home-layout">
-                <div class="control-panel card">
-                    <div class="timer-display-box">
-                        <span id="stopwatch">00:00:00</span>
+        <!-- Main Content Area -->
+        <main class="main-content flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+            
+            <!-- Top App Bar -->
+            <header class="top-bar flex flex-wrap items-center justify-between gap-4 mb-6 bg-[#13141f]/80 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/30">
+                        <i data-lucide="radio" class="w-5 h-5 text-violet-400 animate-pulse"></i>
                     </div>
-                    <div class="control-actions">
-                        <div id="joinOverlay">
-                            <button id="joinBtn" class="primary-btn">▶ Start Focus Session</button>
-                        </div>
-                        <button id="stopBtn" class="danger-btn" style="display: none;">⏹ End Session & Save</button>
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            Public Study Sphere 
+                            <span id="liveBadge" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-semibold">OFFLINE</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Silent peer study zone • Free for all learners</p>
                     </div>
                 </div>
 
-                <div class="workspace-grid-container">
-                    <div class="cam-grid" id="camGrid">
-                        <!-- Video cards with badges will be injected here via home.js -->
+                <div class="flex items-center gap-4">
+                    <!-- User Profile Quick Tag -->
+                    <div class="hidden sm:flex items-center gap-2 bg-[#1b1c2b] border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs text-slate-300">
+                        <span>👤</span> <span id="topBarUserName" class="font-medium">Loading...</span>
+                    </div>
+
+                    <!-- Today's Total -->
+                    <div id="savedTimeDisplay" class="bg-violet-950/40 border border-violet-500/30 px-3.5 py-1.5 rounded-xl text-violet-300 text-xs font-medium mono-num">
+                        Today's Total: 00:00:00
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Left Column: Focus Control Panel -->
+                <div class="lg:col-span-4 flex flex-col gap-5">
+                    
+                    <div class="bg-[#141522] border border-slate-800/80 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div class="absolute -top-12 -right-12 w-36 h-36 bg-violet-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <!-- Subject Selector -->
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Focus</span>
+                            <select id="activeSubjectSelect" class="bg-[#1b1c2e] border border-slate-700 text-xs text-violet-300 rounded-lg px-2.5 py-1 outline-none">
+                                <option value="Mathematics">📐 Mathematics</option>
+                                <option value="Data Structures & C++">💻 Data Structures & C++</option>
+                                <option value="Physics">⚡ Physics</option>
+                                <option value="Chemistry">🧪 Chemistry</option>
+                                <option value="Web Development">🌐 Web Development</option>
+                            </select>
+                        </div>
+
+                        <!-- Standard Focus Pod Avatar -->
+                        <div class="flex items-center justify-center my-3 relative">
+                            <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-violet-600/20 to-purple-800/20 border border-violet-500/30 flex items-center justify-center relative shadow-inner">
+                                <span class="text-4xl anim-flame">💻</span>
+                                <div class="absolute -bottom-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500 text-white flex items-center gap-1">
+                                    <span>Focus Pod</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Digital Stopwatch -->
+                        <div class="text-center my-4">
+                            <div id="stopwatch" class="text-4xl md:text-5xl font-extrabold text-white mono-num tracking-tight">
+                                00:00:00
+                            </div>
+                            <div class="flex items-center justify-center gap-2 mt-2">
+                                <span id="focusStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                                    <span class="w-2 h-2 rounded-full bg-slate-500"></span> Idle
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons: Start Focus Session / End Session -->
+                        <div class="flex flex-col gap-2.5">
+                            <div id="joinOverlay">
+                                <button id="joinBtn" class="w-full py-3.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm shadow-lg shadow-violet-600/30 flex items-center justify-center gap-2 transition">
+                                    <i data-lucide="play" class="w-4 h-4 fill-white"></i>
+                                    <span>▶ Start Focus Session</span>
+                                </button>
+                            </div>
+                            <button id="stopBtn" class="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 transition" style="display: none;">
+                                <i data-lucide="square" class="w-4 h-4 fill-white"></i>
+                                <span>⏹ End Session & Save</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Session Goals Card -->
+                    <div class="bg-[#141522] border border-slate-800/80 rounded-2xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="check-square" class="w-4 h-4 text-violet-400"></i> Session Goals
+                            </h3>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-[#191a29] border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                                <input type="checkbox" class="accent-violet-500 rounded">
+                                <span class="text-slate-300">Solve 5 Practice Problems</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-[#191a29] border border-slate-800 hover:border-slate-700 cursor-pointer text-xs">
+                                <input type="checkbox" class="accent-violet-500 rounded">
+                                <span class="text-slate-300">Complete daily revision roadmap</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Live Peer Desks (YPT Style) -->
+                <div class="lg:col-span-8 flex flex-col gap-4">
+                    
+                    <div class="bg-[#141522] border border-slate-800/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-semibold text-white flex items-center gap-2">
+                                <span>🌐</span> Global Sphere
+                            </span>
+                            <span class="text-xs bg-slate-800/90 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700/60 font-mono">
+                                <strong class="text-violet-400" id="liveUserCount">0</strong> peers studying
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-slate-400">Filter:</span>
+                            <button onclick="filterDeskGrid('all')" class="px-2.5 py-1 rounded-lg bg-violet-600/30 text-violet-300 border border-violet-500/40 font-medium">All</button>
+                            <button onclick="filterDeskGrid('focusing')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Focusing 🔥</button>
+                        </div>
+                    </div>
+
+                    <!-- 4-Column Live Grid -->
+                    <div class="bg-[#12131f] border border-slate-800/80 rounded-2xl p-5 min-h-[460px]">
+                        <div id="deskGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <!-- Live user desks injected here -->
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-500 px-2 flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i> Click any study buddy's desk to send a cheer flame 🔥
                     </div>
                 </div>
             </div>
+
         </main>
     </div>
 
-    <!-- Draggable Floating Icon & Chat Window -->
+    <!-- Buddy Detail & Cheer Modal -->
+    <div id="buddyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#161826] border border-slate-700/80 rounded-2xl max-w-sm w-full p-5 relative text-center">
+            <button onclick="closeBuddyModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-[#1f2133] border border-violet-500/30 flex items-center justify-center text-3xl mb-3">
+                💻
+            </div>
+            <h4 id="buddyNameModal" class="text-base font-bold text-white">Member</h4>
+            <p id="buddySubjectModal" class="text-xs text-violet-400 font-medium mb-3">Subject</p>
+
+            <div class="bg-[#10111a] rounded-xl p-3 border border-slate-800 mb-4 flex justify-around text-center">
+                <div>
+                    <span class="text-[10px] text-slate-400 block uppercase">Time Active</span>
+                    <span id="buddyTimeModal" class="font-mono text-sm font-bold text-white">00:00:00</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 block uppercase">Status</span>
+                    <span id="buddyStatusModal" class="text-xs font-semibold text-emerald-400">Focusing 🔥</span>
+                </div>
+            </div>
+
+            <button onclick="cheerCurrentBuddy(event)" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
+                <span>Send Flame Cheer 🔥</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Draggable Floating Puter AI Assistant -->
     <div id="aiChatBtn">💬</div>
     <div id="aiChatWindow" class="ai-chat-hidden">
         <div class="ai-chat-header" id="aiChatHeader">
@@ -282,19 +373,14 @@
         </div>
     </div>
 
-    <!-- Chatbot Logic & Drag Script -->
+    <!-- Puter AI Drag & Chat Logic -->
     <script>
         function toggleAIChatBot() {
-            const chatWin = document.getElementById("aiChatWindow");
-            chatWin.classList.toggle("ai-chat-hidden");
+            document.getElementById("aiChatWindow").classList.toggle("ai-chat-hidden");
         }
-
         function handleAIAssistantEnter(event) {
-            if (event.key === "Enter") {
-                sendAIDoubt();
-            }
+            if (event.key === "Enter") sendAIDoubt();
         }
-
         async function sendAIDoubt() {
             const inputField = document.getElementById("aiUserInput");
             const doubtText = inputField.value.trim();
@@ -302,22 +388,18 @@
 
             appendChatMsg(doubtText, "ai-user-msg");
             inputField.value = "";
-
             const tempMsgId = appendChatMsg("Thinking...", "ai-bot-msg");
 
             try {
                 const prompt = `You are an AI study assistant for Focusora students. Keep explanations direct, step-by-step, clear, and concise. Student Doubt: ${doubtText}`;
                 const response = await puter.ai.chat(prompt);
-                
                 const replyText = typeof response === "object" ? (response.message?.content || response.text || JSON.stringify(response)) : response;
                 document.getElementById(tempMsgId).innerText = replyText;
-
             } catch (err) {
                 console.error("AI Generation Error:", err);
                 document.getElementById(tempMsgId).innerText = "❌ Response fetch nahi ho paya. Please try again.";
             }
         }
-
         function appendChatMsg(msg, className) {
             const container = document.getElementById("aiChatMessages");
             const msgEl = document.createElement("div");
@@ -330,25 +412,19 @@
             return uniqueId;
         }
 
-        // Draggable Function for Chat Window & Chat Icon
         (function setupDraggableElements() {
             function makeDraggable(targetEl, handleEl, isIcon = false) {
-                let isDragging = false;
-                let startX, startY, initialLeft, initialTop;
-                let hasMoved = false;
+                let isDragging = false, startX, startY, initialLeft, initialTop, hasMoved = false;
 
                 handleEl.addEventListener("mousedown", (e) => {
                     if (e.target.classList.contains("ai-close-btn")) return;
-
                     isDragging = true;
                     hasMoved = false;
                     const rect = targetEl.getBoundingClientRect();
-
                     targetEl.style.bottom = "auto";
                     targetEl.style.right = "auto";
                     targetEl.style.left = rect.left + "px";
                     targetEl.style.top = rect.top + "px";
-
                     startX = e.clientX;
                     startY = e.clientY;
                     initialLeft = rect.left;
@@ -362,17 +438,9 @@
                     if (!isDragging) return;
                     const dx = e.clientX - startX;
                     const dy = e.clientY - startY;
-
-                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                        hasMoved = true;
-                    }
-
-                    let newLeft = initialLeft + dx;
-                    let newTop = initialTop + dy;
-
-                    newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, newLeft));
-                    newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, newTop));
-
+                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+                    let newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, initialLeft + dx));
+                    let newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, initialTop + dy));
                     targetEl.style.left = newLeft + "px";
                     targetEl.style.top = newTop + "px";
                 }
@@ -382,22 +450,16 @@
                     isDragging = false;
                     document.removeEventListener("mousemove", onMouseMove);
                     document.removeEventListener("mouseup", onMouseUp);
-
-                    if (isIcon && !hasMoved) {
-                        toggleAIChatBot();
-                    }
+                    if (isIcon && !hasMoved) toggleAIChatBot();
                 }
             }
 
-            const chatWin = document.getElementById("aiChatWindow");
-            const chatHeader = document.getElementById("aiChatHeader");
-            const chatBtn = document.getElementById("aiChatBtn");
-
-            makeDraggable(chatWin, chatHeader, false);
-            makeDraggable(chatBtn, chatBtn, true);
+            makeDraggable(document.getElementById("aiChatWindow"), document.getElementById("aiChatHeader"), false);
+            makeDraggable(document.getElementById("aiChatBtn"), document.getElementById("aiChatBtn"), true);
         })();
     </script>
 
+    <!-- Connect External Home Logic -->
     <script src="home.js"></script>
     <script src="script.js"></script>
 </body>

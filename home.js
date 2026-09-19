@@ -1,53 +1,83 @@
+// ==========================================
+// Focusora - Home Workspace Logic (Study Sphere)
+// Zero-lag, Instant Stop & Fast Peer Sync
+// ==========================================
+
+let timerInterval = null;
+let seconds = 0;
+let isJoined = false;
+let totalSavedSeconds = 0;
+let currentUser = null;
+let myDisplayName = "Focus Member";
+let myActiveDocId = null;
+let roomUnsubscribe = null;
+let peerDesks = [];
+let currentFilter = 'all';
+
+function formatTime(totalSeconds) {
+    const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const secs = String(totalSeconds % 60).padStart(2, '0');
+    return `${hrs}:${mins}:${secs}`;
+}
+
+function resolveDisplayName(user, docData) {
+    if (docData && (docData.name || docData.username || docData.displayName)) {
+        return docData.name || docData.username || docData.displayName;
+    }
+    if (user && user.displayName) return user.displayName;
+    if (user && user.email) return user.email.split('@')[0];
+    return localStorage.getItem('focusora_username') || "Focus Member";
+}
+
+function toggleMenuLock(lock) {
+    const menuItems = document.querySelectorAll('.menu-item, #sidebarMenu a');
+    menuItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href && href !== 'home.html' && !item.classList.contains('theme-toggle')) {
+            if (lock) {
+                item.classList.add('locked');
+                item.onclick = function(e) {
+                    if (isJoined) {
+                        e.preventDefault();
+                        alert("⚠️ Focus Session chalu hai! Pehle 'End Session & Save' dabayein taaki timer reset na ho.");
+                        return false;
+                    }
+                };
+            } else {
+                item.classList.remove('locked');
+                item.onclick = null;
+            }
+        }
+    });
+
+    const profileLink = document.getElementById('profileLink');
+    if (profileLink) {
+        if (lock) {
+            profileLink.classList.add('locked');
+            profileLink.onclick = (e) => {
+                if (isJoined) {
+                    e.preventDefault();
+                    alert("⚠️ Focus Session chalu hai! Pehle 'End Session & Save' karein.");
+                    return false;
+                }
+            };
+        } else {
+            profileLink.classList.remove('locked');
+            profileLink.onclick = null;
+        }
+    }
+}
+
 window.addEventListener("DOMContentLoaded", async function() {
     const joinBtn = document.getElementById('joinBtn');
     const stopBtn = document.getElementById('stopBtn');
     const joinOverlay = document.getElementById('joinOverlay');
     const stopwatch = document.getElementById('stopwatch');
-    const camGrid = document.getElementById('camGrid');
     const savedTimeEl = document.getElementById('savedTimeDisplay');
-    
-    // Sidebar links
-    const leaderboardLink = document.getElementById('leaderboardLink');
-    const groupsLink = document.getElementById('groupsLink');
-    const goalsLink = document.getElementById('goalsLink');
+    const topBarUserName = document.getElementById('topBarUserName');
+    const sidebarUserName = document.getElementById('sidebarUserName');
 
-    let timerInterval;
-    let seconds = 0;
-    let isJoined = false;
-    let currentStream = null;
-    let totalSavedSeconds = 0;
-    let currentUser = null;
-    let myDisplayName = "Focus Member";
-
-    let myPeer = null;
-    let currentPeerId = null;
-    let peerConnections = {};
-    let peerNames = {}; // peerId -> userName mapping
-    let roomUnsubscribe = null;
-
-    // Time Format Helper
-    function formatTime(totalSeconds) {
-        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(totalSeconds % 60).padStart(2, '0');
-        return hrs + ":" + mins + ":" + secs;
-    }
-
-    // Helper to resolve current username cleanly
-    function resolveDisplayName(user, docData) {
-        if (docData && (docData.name || docData.username || docData.displayName)) {
-            return docData.name || docData.username || docData.displayName;
-        }
-        if (user && user.displayName) {
-            return user.displayName;
-        }
-        if (user && user.email) {
-            return user.email.split('@')[0];
-        }
-        return localStorage.getItem('focusora_username') || "Focus Member";
-    }
-
-    // Firebase Auth State Observer
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
@@ -64,341 +94,305 @@ window.addEventListener("DOMContentLoaded", async function() {
                         myDisplayName = resolveDisplayName(user, null);
                     }
                 } catch (err) {
-                    console.error("Error fetching user data from Firestore:", err);
-                    totalSavedSeconds = 0;
                     myDisplayName = resolveDisplayName(user, null);
                 }
             } else {
                 currentUser = null;
-                totalSavedSeconds = 0;
-                myDisplayName = "Focus Member";
+                totalSavedSeconds = parseInt(localStorage.getItem('focusora_saved_time') || '0', 10);
+                myDisplayName = localStorage.getItem('focusora_username') || "Focus Member";
             }
 
-            if (savedTimeEl) {
-                savedTimeEl.textContent = "Today's Total: " + formatTime(totalSavedSeconds);
-            }
+            if (savedTimeEl) savedTimeEl.textContent = "Today's Total: " + formatTime(totalSavedSeconds);
+            if (topBarUserName) topBarUserName.textContent = myDisplayName;
+            if (sidebarUserName) sidebarUserName.textContent = myDisplayName;
         });
     }
 
-    // Initial placeholder state
-    if (camGrid) {
-        camGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #888;">Click "Start Focus Session" to join the Public Global Study Room.</div>';
-    }
+    initPublicSphereListener();
 
-    // High performance video element renderer with dynamic name badge
-    function addVideoStream(stream, label, id, isLocal = false) {
-        let userBox = document.getElementById(id);
-        if (userBox) {
-            const videoEl = userBox.querySelector('video');
-            if (videoEl && videoEl.srcObject !== stream) {
-                videoEl.srcObject = stream;
-            }
-            const tagEl = userBox.querySelector('.user-cam-badge span:last-child');
-            if (tagEl && label) {
-                tagEl.textContent = label;
-            }
-            return;
-        }
-
-        userBox = document.createElement('div');
-        userBox.className = 'cam-card';
-        userBox.id = id;
-
-        const videoEl = document.createElement('video');
-        videoEl.autoplay = true;
-        videoEl.playsInline = true;
-        videoEl.muted = isLocal;
-        videoEl.srcObject = stream;
-
-        // Overlay Badge with Live Indicator Dot
-        const badgeEl = document.createElement('div');
-        badgeEl.className = 'user-cam-badge';
-
-        const dotEl = document.createElement('span');
-        dotEl.className = 'status-dot';
-        if (isLocal) {
-            dotEl.style.backgroundColor = '#ef4444'; // Red dot for local user
-        }
-
-        const nameEl = document.createElement('span');
-        nameEl.textContent = label;
-
-        badgeEl.appendChild(dotEl);
-        badgeEl.appendChild(nameEl);
-
-        userBox.appendChild(videoEl);
-        userBox.appendChild(badgeEl);
-
-        if (camGrid) {
-            camGrid.appendChild(userBox);
-        }
-    }
-
-    function removeVideoStream(peerId) {
-        const userBox = document.getElementById(peerId);
-        if (userBox) userBox.remove();
-        delete peerNames[peerId];
-    }
-
-    // Fast call dispatcher with dynamic name attachment
-    function connectToNewUser(peerId, stream, peerUserName) {
-        if (peerConnections[peerId] || peerId === currentPeerId) return;
-
-        if (peerUserName) {
-            peerNames[peerId] = peerUserName;
-        }
-
-        const call = myPeer.call(peerId, stream, {
-            metadata: { userName: myDisplayName }
-        });
-        if (!call) return;
-
-        call.on('stream', (remoteStream) => {
-            const displayName = peerNames[peerId] || 'Member 👤';
-            addVideoStream(remoteStream, displayName, call.peer, false);
-        });
-
-        call.on('close', () => {
-            removeVideoStream(call.peer);
-            delete peerConnections[call.peer];
-        });
-
-        call.on('error', () => {
-            removeVideoStream(call.peer);
-            delete peerConnections[call.peer];
-        });
-
-        peerConnections[call.peer] = call;
-    }
-
-    // Menu lock
-    function toggleMenuLock(lock) {
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            if (!item.classList.contains('theme-toggle')) {
-                if (lock) {
-                    item.classList.add('disabled');
-                } else {
-                    item.classList.remove('disabled');
-                }
-            }
-        });
-
-        const profileLink = document.getElementById('profileLink');
-        if (profileLink) {
-            if (lock) {
-                profileLink.classList.add('disabled');
-            } else {
-                profileLink.classList.remove('disabled');
-            }
-        }
-    }
-
-    // Start Focus Session
+    // ==========================================
+    // START FOCUS BUTTON
+    // ==========================================
     if (joinBtn) {
-        joinBtn.onclick = async function() {
+        joinBtn.onclick = function() {
             if (isJoined) return;
 
-            try {
-                joinBtn.disabled = true;
-                joinBtn.innerText = "Connecting...";
+            isJoined = true;
+            seconds = 0;
 
-                // Optimized constraints for multi-peer stability & fast frame transmission
-                currentStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 320, max: 480 },
-                        height: { ideal: 240, max: 360 },
-                        frameRate: { ideal: 15, max: 20 }
-                    },
-                    audio: false
-                });
+            if (joinOverlay) joinOverlay.style.display = 'none';
+            if (stopBtn) stopBtn.style.display = 'flex';
+            if (stopwatch) stopwatch.textContent = "00:00:00";
 
-                isJoined = true;
-                seconds = 0;
-
-                if (joinOverlay) joinOverlay.style.display = 'none';
-                if (stopBtn) stopBtn.style.display = 'flex';
-                if (stopwatch) stopwatch.textContent = "00:00:00";
-
-                toggleMenuLock(true);
-                if (camGrid) camGrid.innerHTML = '';
-
-                // Show local camera with exact User Name
-                const localLabel = myDisplayName ? `${myDisplayName} (You)` : 'You (Live)';
-                addVideoStream(currentStream, localLabel, 'myLiveCamBox', true);
-
-                // Timer start
-                timerInterval = setInterval(() => {
-                    seconds++;
-                    if (stopwatch) stopwatch.textContent = formatTime(seconds);
-                }, 1000);
-
-                // Initialize Peer with public STUN servers for direct P2P mesh
-                myPeer = new Peer(undefined, {
-                    config: {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' }
-                        ]
-                    }
-                });
-
-                myPeer.on('open', async (id) => {
-                    currentPeerId = id;
-
-                    // 1. Register to public room pool in Firestore with username
-                    if (typeof firebase !== 'undefined' && firebase.firestore) {
-                        await firebase.firestore().collection('public_focus_room').doc(id).set({
-                            peerId: id,
-                            userName: myDisplayName,
-                            userId: currentUser ? currentUser.uid : null,
-                            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-
-                        // 2. Real-time mesh sync listener
-                        roomUnsubscribe = firebase.firestore().collection('public_focus_room').onSnapshot((snapshot) => {
-                            snapshot.docChanges().forEach((change) => {
-                                const peerId = change.doc.id;
-                                const data = change.doc.data();
-
-                                if (change.type === 'added' && peerId !== currentPeerId) {
-                                    const remoteUserName = data.userName || 'Member 👤';
-                                    peerNames[peerId] = remoteUserName;
-                                    connectToNewUser(peerId, currentStream, remoteUserName);
-                                }
-
-                                if (change.type === 'removed') {
-                                    if (peerConnections[peerId]) {
-                                        peerConnections[peerId].close();
-                                        delete peerConnections[peerId];
-                                    }
-                                    removeVideoStream(peerId);
-                                }
-                            });
-                        });
-                    }
-                });
-
-                // Answer incoming calls
-                myPeer.on('call', (call) => {
-                    // Extract caller name from metadata if passed, otherwise fall back to pool cache
-                    const callerName = (call.metadata && call.metadata.userName) 
-                        ? call.metadata.userName 
-                        : (peerNames[call.peer] || 'Member 👤');
-
-                    peerNames[call.peer] = callerName;
-                    call.answer(currentStream);
-
-                    call.on('stream', (remoteStream) => {
-                        const labelToRender = peerNames[call.peer] || 'Member 👤';
-                        addVideoStream(remoteStream, labelToRender, call.peer, false);
-                    });
-
-                    call.on('close', () => {
-                        removeVideoStream(call.peer);
-                        delete peerConnections[call.peer];
-                    });
-
-                    call.on('error', () => {
-                        removeVideoStream(call.peer);
-                        delete peerConnections[call.peer];
-                    });
-
-                    peerConnections[call.peer] = call;
-                });
-
-            } catch (err) {
-                console.error("Camera Access Error:", err);
-                if (camGrid) {
-                    camGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ff5555;">Camera permission is required. Please allow access and try again.</div>';
-                }
-                isJoined = false;
-                joinBtn.disabled = false;
-                joinBtn.innerText = "▶ Start Focus Session";
-                if (joinOverlay) joinOverlay.style.display = 'flex';
-                if (stopBtn) stopBtn.style.display = 'none';
-                toggleMenuLock(false);
-                if (timerInterval) clearInterval(timerInterval);
+            const statusBadge = document.getElementById("focusStatusBadge");
+            if (statusBadge) {
+                statusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Focusing 🔥';
             }
+            const liveBadge = document.getElementById("liveBadge");
+            if (liveBadge) {
+                liveBadge.className = "text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold";
+                liveBadge.textContent = "LIVE";
+            }
+
+            toggleMenuLock(true);
+
+            const subject = document.getElementById("activeSubjectSelect")?.value || "Mathematics";
+            const myId = currentUser ? currentUser.uid : `guest_${Date.now()}`;
+            myActiveDocId = myId;
+
+            // Instant Local Injection
+            peerDesks = peerDesks.filter(p => p.id !== myId && p.userId !== myId);
+            peerDesks.unshift({
+                id: myId,
+                userId: myId,
+                name: myDisplayName,
+                subject: subject,
+                seconds: 0,
+                isFocusing: true
+            });
+            renderDeskGrid();
+
+            registerUserInSphere(myId, myDisplayName, subject);
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                seconds++;
+                if (stopwatch) stopwatch.textContent = formatTime(seconds);
+
+                const myTimeEl = document.getElementById(`time-val-${myId}`);
+                if (myTimeEl) myTimeEl.textContent = formatTime(seconds);
+
+                peerDesks.forEach(peer => {
+                    if (peer.isFocusing && peer.id !== myId) {
+                        peer.seconds = (peer.seconds || 0) + 1;
+                        const pEl = document.getElementById(`time-val-${peer.id}`);
+                        if (pEl) pEl.textContent = formatTime(peer.seconds);
+                    }
+                });
+            }, 1000);
         };
     }
 
-    // Stop Session
+    // ==========================================
+    // STOP FOCUS BUTTON (INSTANT RESPONSE FIX)
+    // ==========================================
     if (stopBtn) {
         stopBtn.onclick = async function() {
             if (!isJoined) return;
 
+            // 1. Instantly Stop Timer & Unlock Menu
             clearInterval(timerInterval);
-            totalSavedSeconds += seconds;
+            timerInterval = null;
+            isJoined = false;
 
-            // Save time to Firestore
-            if (currentUser && typeof firebase !== 'undefined' && firebase.firestore) {
-                try {
-                    await firebase.firestore().collection('users').doc(currentUser.uid).set({
-                        savedTime: totalSavedSeconds,
-                        email: currentUser.email,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error("Error saving time to Firestore:", err);
-                }
-            } else {
-                localStorage.setItem('focusora_saved_time', totalSavedSeconds);
+            const sessionDuration = seconds;
+            seconds = 0;
+            totalSavedSeconds += sessionDuration;
+
+            // 2. Instant UI Reset (Bina network delay ke UI turant change hoga)
+            if (stopwatch) stopwatch.textContent = "00:00:00";
+            if (joinOverlay) joinOverlay.style.display = 'flex';
+            if (stopBtn) stopBtn.style.display = 'none';
+            if (savedTimeEl) savedTimeEl.textContent = "Today's Total: " + formatTime(totalSavedSeconds);
+
+            const statusBadge = document.getElementById("focusStatusBadge");
+            if (statusBadge) {
+                statusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700";
+                statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> Idle';
             }
-            
-            if (savedTimeEl) {
-                savedTimeEl.textContent = "Today's Total: " + formatTime(totalSavedSeconds);
-            }
-
-            // Unsubscribe room listener
-            if (roomUnsubscribe) {
-                roomUnsubscribe();
-                roomUnsubscribe = null;
-            }
-
-            // Remove from public room pool
-            if (currentPeerId && typeof firebase !== 'undefined' && firebase.firestore) {
-                firebase.firestore().collection('public_focus_room').doc(currentPeerId).delete().catch(() => {});
-            }
-
-            // Stop local tracks
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-                currentStream = null;
-            }
-
-            // Close all peers
-            Object.keys(peerConnections).forEach(peerId => {
-                if (peerConnections[peerId]) peerConnections[peerId].close();
-            });
-            peerConnections = {};
-            peerNames = {};
-
-            if (myPeer) { 
-                myPeer.destroy(); 
-                myPeer = null; 
+            const liveBadge = document.getElementById("liveBadge");
+            if (liveBadge) {
+                liveBadge.className = "text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full font-semibold";
+                liveBadge.textContent = "OFFLINE";
             }
 
             toggleMenuLock(false);
-            isJoined = false;
-            joinBtn.disabled = false;
-            joinBtn.innerText = "▶ Start Focus Session";
 
-            if (joinOverlay) joinOverlay.style.display = 'flex';
-            if (stopBtn) stopBtn.style.display = 'none';
-            if (stopwatch) stopwatch.textContent = "00:00:00";
-            seconds = 0;
+            // 3. Remove from Local Desk Grid Immediately (Bug Fix: docId backup pehle liya)
+            const docToRemove = myActiveDocId;
+            if (docToRemove) {
+                peerDesks = peerDesks.filter(p => p.id !== docToRemove && p.userId !== docToRemove);
+                renderDeskGrid();
+            }
 
-            if (camGrid) {
-                camGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #888;">Click "Start Focus Session" to join the Public Global Study Room.</div>';
+            // 4. Background Sync (UI ko freeze hone nahi dega)
+            try {
+                if (currentUser && typeof firebase !== 'undefined' && firebase.firestore) {
+                    firebase.firestore().collection('users').doc(currentUser.uid).set({
+                        savedTime: totalSavedSeconds,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }).catch(err => console.warn("Firestore time sync error:", err));
+                } else {
+                    localStorage.setItem('focusora_saved_time', totalSavedSeconds);
+                }
+
+                if (docToRemove && typeof firebase !== 'undefined' && firebase.firestore) {
+                    firebase.firestore().collection('public_study_sphere').doc(docToRemove).delete()
+                        .catch(err => console.warn("Sphere doc delete error:", err));
+                }
+            } catch (e) {
+                console.error("Stop button sync error:", e);
+            } finally {
+                myActiveDocId = null;
             }
         };
     }
+});
 
-    // Tab close cleanup
-    window.addEventListener("beforeunload", () => {
-        if (currentPeerId && typeof firebase !== 'undefined' && firebase.firestore) {
-            firebase.firestore().collection('public_focus_room').doc(currentPeerId).delete();
+// ==========================================
+// Firestore Sync & Peer Management
+// ==========================================
+function initPublicSphereListener() {
+    if (typeof firebase === 'undefined' || !firebase.firestore) {
+        loadMockPeers();
+        return;
+    }
+
+    const sphereRef = firebase.firestore().collection('public_study_sphere');
+    
+    roomUnsubscribe = sphereRef.onSnapshot((snapshot) => {
+        const liveList = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            liveList.push({ id: doc.id, ...data });
+        });
+
+        if (isJoined && myActiveDocId) {
+            const exists = liveList.some(p => p.id === myActiveDocId);
+            if (!exists) {
+                liveList.unshift({
+                    id: myActiveDocId,
+                    userId: myActiveDocId,
+                    name: myDisplayName,
+                    subject: document.getElementById("activeSubjectSelect")?.value || "Mathematics",
+                    seconds: seconds,
+                    isFocusing: true
+                });
+            }
         }
+
+        if (liveList.length === 0) {
+            loadMockPeers();
+        } else {
+            peerDesks = liveList;
+            renderDeskGrid();
+        }
+    }, () => {
+        loadMockPeers();
     });
+}
+
+function loadMockPeers() {
+    if (peerDesks.length > 0 && isJoined) return;
+    peerDesks = [
+        { id: 'mock_1', name: "StudyMate", subject: "DSA in C++", seconds: 14211, isFocusing: true },
+        { id: 'mock_2', name: "Coco", subject: "Organic Chem", seconds: 8930, isFocusing: true },
+        { id: 'mock_3', name: "Billy", subject: "Physics (Optics)", seconds: 5410, isFocusing: true },
+        { id: 'mock_4', name: "Carl", subject: "Linear Algebra", seconds: 3450, isFocusing: true }
+    ];
+    renderDeskGrid();
+}
+
+async function registerUserInSphere(docId, name, subject) {
+    if (typeof firebase === 'undefined' || !firebase.firestore) return;
+    try {
+        await firebase.firestore().collection('public_study_sphere').doc(docId).set({
+            name: name || "Focus Member",
+            subject: subject || "Mathematics",
+            isFocusing: true,
+            seconds: 0,
+            userId: currentUser ? currentUser.uid : docId,
+            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        console.error("Error writing to public_study_sphere:", err);
+    }
+}
+
+// ==========================================
+// Smooth Zero-Flicker Grid Renderer
+// ==========================================
+function renderDeskGrid() {
+    const container = document.getElementById("deskGrid");
+    if (!container) return;
+
+    const filtered = peerDesks.filter(p => {
+        if (currentFilter === 'focusing') return p.isFocusing;
+        return true;
+    });
+
+    container.innerHTML = "";
+
+    filtered.forEach(peer => {
+        const isMe = (myActiveDocId && peer.id === myActiveDocId) || (currentUser && peer.userId === currentUser.uid);
+        const card = document.createElement("div");
+        card.id = `desk-card-${peer.id}`;
+        card.className = `p-3.5 rounded-xl border flex flex-col items-center justify-between text-center transition cursor-pointer relative ${
+            isMe 
+                ? 'border-violet-500 bg-[#1e1a33] shadow-[0_0_15px_rgba(139,92,246,0.25)]' 
+                : 'bg-[#181928] border-slate-800 hover:border-violet-500/40'
+        }`;
+        card.onclick = () => openBuddyModal(peer);
+
+        card.innerHTML = `
+            <div class="relative mb-2">
+                <div class="w-14 h-14 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-2xl" 
+                     style="${peer.isFocusing ? 'box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : ''}">
+                    💻
+                </div>
+                <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#12131f] ${peer.isFocusing ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' : 'bg-amber-400'}"></span>
+            </div>
+
+            <div class="w-full">
+                <h5 class="text-xs font-semibold text-white truncate">${peer.name || 'Member'} ${isMe ? '(You)' : ''}</h5>
+                <p class="text-[10px] text-slate-400 truncate mb-1">${peer.subject || 'Study'}</p>
+                <div id="time-val-${peer.id}" class="font-mono text-[11px] font-bold ${peer.isFocusing ? 'text-emerald-400' : 'text-slate-400'} bg-black/40 py-0.5 rounded border border-slate-800">
+                    ${formatTime(peer.seconds || 0)}
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    const userCountEl = document.getElementById("liveUserCount");
+    if (userCountEl) userCountEl.innerText = filtered.length;
+}
+
+function filterDeskGrid(type) {
+    currentFilter = type;
+    renderDeskGrid();
+}
+
+function openBuddyModal(peer) {
+    document.getElementById("buddyNameModal").innerText = peer.name || 'Member';
+    document.getElementById("buddySubjectModal").innerText = peer.subject || 'Study';
+    document.getElementById("buddyTimeModal").innerText = formatTime(peer.seconds || 0);
+    document.getElementById("buddyStatusModal").innerText = peer.isFocusing ? "Focusing 🔥" : "Resting ☕";
+    document.getElementById("buddyModal").classList.remove("hidden");
+}
+
+function closeBuddyModal() {
+    document.getElementById("buddyModal").classList.add("hidden");
+}
+
+function cheerCurrentBuddy(e) {
+    for (let i = 0; i < 5; i++) {
+        const p = document.createElement("div");
+        p.className = "reaction-particle";
+        p.innerText = "🔥";
+        p.style.left = (e.clientX - 20 + (Math.random() * 40)) + "px";
+        p.style.top = (e.clientY - 20 + (Math.random() * 40)) + "px";
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+    }
+    setTimeout(() => {
+        closeBuddyModal();
+    }, 400);
+}
+
+window.addEventListener("beforeunload", () => {
+    if (myActiveDocId && typeof firebase !== 'undefined' && firebase.firestore) {
+        firebase.firestore().collection('public_study_sphere').doc(myActiveDocId).delete();
+    }
 });

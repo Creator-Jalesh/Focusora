@@ -8,14 +8,18 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="home.css">
 
-    <!-- Puter.js Free AI Library -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
     <script src="https://js.puter.com/v2/"></script>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+
+    <script src="pyq-data.js"></script>
 
     <style>
         .exam-wrapper { padding: 10px 0; display: flex; flex-direction: column; gap: 20px; }
@@ -169,13 +173,37 @@
         .diff-moderate { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
         .diff-hard { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
+        /* FIX: Gap and broken sentence fix */
         .quiz-question-box {
             font-size: 17px;
             font-weight: 600;
             margin-bottom: 24px;
-            line-height: 1.6;
+            line-height: 1.7;
             color: var(--text-color, #ffffff);
-            white-space: pre-wrap;
+            white-space: normal !important;
+            word-break: break-word;
+        }
+
+        /* FIX: KaTeX display formula ko inline keep karna taaki sentences na tootein */
+        .quiz-question-box .katex-display, 
+        .quiz-opt-btn .katex-display, 
+        .mock-opt-btn .katex-display,
+        .q-feed-card .katex-display {
+            display: inline-block !important;
+            margin: 0 4px !important;
+            text-align: left !important;
+            vertical-align: middle;
+        }
+
+        .q-img-elem {
+            max-width: min(100%, 460px);
+            height: auto;
+            border-radius: 8px;
+            margin: 10px auto;
+            display: block;
+            border: 1px solid #3b3b54;
+            background: #ffffff;
+            padding: 6px;
         }
 
         .options-list-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
@@ -191,6 +219,10 @@
             font-size: 14px;
             font-family: inherit;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: normal;
         }
         .mock-opt-btn:hover, .quiz-opt-btn:hover { border-color: #6366f1; background: var(--hover-bg, #282845); }
         .mock-opt-btn.selected { background: #4f46e5 !important; border-color: #818cf8 !important; color: #ffffff !important; font-weight: 600; }
@@ -305,7 +337,7 @@
         }
         .q-feed-card:hover { border-color: #6366f1; background: var(--hover-bg, #1c1c2e); transform: translateX(4px); }
         .q-feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; }
-        .q-feed-title { font-size: 15px; font-weight: 600; color: var(--text-color, #f1f5f9); margin-bottom: 12px; line-height: 1.5; }
+        .q-feed-title { font-size: 15px; font-weight: 600; color: var(--text-color, #f1f5f9); margin-bottom: 12px; line-height: 1.6; }
         .q-feed-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
         .status-unsolved { background: var(--input-bg, #252538); color: var(--subtext-color, #94a3b8); }
         .status-correct { background: rgba(16, 185, 129, 0.2); color: #34d399; }
@@ -319,11 +351,9 @@
             margin-top: 16px;
             font-size: 14px;
             color: #93c5fd;
-            white-space: pre-wrap;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        /* Sidebar profile styling matching image */
         .sidebar-user-box {
             display: flex;
             align-items: center;
@@ -365,7 +395,6 @@
         }
         .sidebar-logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
 
-        /* Floating AI Chatbot */
         #aiChatBtn {
             position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
             background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff;
@@ -429,7 +458,6 @@
 
             <div class="exam-wrapper">
                 
-                <!-- View 1: Select Exam -->
                 <div id="viewExams" class="step-view">
                     <div class="card" style="padding: 24px;">
                         <h3 style="margin-bottom: 6px; color:#818cf8;">🎯 Choose Target Examination</h3>
@@ -441,7 +469,6 @@
                     </div>
                 </div>
 
-                <!-- View 2: Choose Mode -->
                 <div id="viewCategory" class="step-view hidden">
                     <div class="exam-header-nav">
                         <button class="back-nav-btn" onclick="window.goToView('viewExams')">← Back to Exams</button>
@@ -460,7 +487,6 @@
                     </div>
                 </div>
 
-                <!-- View 3A: PYQ Subject Selection -->
                 <div id="viewPyqSubjects" class="step-view hidden">
                     <div class="exam-header-nav">
                         <button class="back-nav-btn" onclick="window.goToView('viewCategory')">← Back</button>
@@ -469,7 +495,6 @@
                     <div class="exam-selection-grid" id="pyqSubjectsContainer"></div>
                 </div>
 
-                <!-- View 3B: Mock Test Shift Papers List -->
                 <div id="viewMockShifts" class="step-view hidden">
                     <div class="exam-header-nav">
                         <button class="back-nav-btn" onclick="window.goToView('viewCategory')">← Back</button>
@@ -478,7 +503,6 @@
                     <div class="exam-selection-grid" id="mockShiftsContainer"></div>
                 </div>
 
-                <!-- View 4: Marks App Style Question Feed -->
                 <div id="viewQuestionFeed" class="step-view hidden">
                     <div class="exam-header-nav">
                         <button class="back-nav-btn" onclick="window.goToView('viewPyqSubjects')">← Back to Subjects</button>
@@ -507,7 +531,6 @@
                     <div class="feed-container" id="questionFeedList"></div>
                 </div>
 
-                <!-- View 5: PYQ Practice Mode -->
                 <div id="viewQuiz" class="step-view hidden">
                     <div class="exam-header-nav">
                         <button class="back-nav-btn" onclick="window.goToView('viewQuestionFeed')">← Back to Questions List</button>
@@ -522,14 +545,16 @@
                         <div class="quiz-question-box" id="quizQuestionText">Loading Question...</div>
                         <div class="options-list-grid" id="quizOptionsContainer"></div>
                         <div class="solution-box hidden" id="quizExplanation"></div>
-                        <div class="quiz-actions-bar" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                        <div class="quiz-actions-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:20px;">
                             <span id="quizStatus" style="font-size: 13px; color: var(--subtext-color, #94a3b8);">Select an option to check answer</span>
-                            <button class="next-q-btn hidden" id="nextQuestionBtn" onclick="window.nextPyqQuestion()">Next Question →</button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="next-q-btn btn-secondary" id="prevQuestionBtn" onclick="window.prevPyqQuestion()">← Prev</button>
+                                <button class="next-q-btn" id="nextQuestionBtn" onclick="window.nextPyqQuestion()">Next Question →</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- View 6: Real NTA Mock Test Interface -->
                 <div id="viewMockTest" class="step-view hidden">
                     <div class="exam-header-nav">
                         <span style="font-weight:700; color:#818cf8;" id="mockPaperDisplayTitle">⚡ Live JEE Shift Paper</span>
@@ -539,7 +564,6 @@
                         </div>
                     </div>
 
-                    <!-- Top Subject Tabs -->
                     <div class="nta-subject-tabs" id="mockSubjectTabsContainer"></div>
 
                     <div class="mock-container">
@@ -579,7 +603,6 @@
                     </div>
                 </div>
 
-                <!-- View 7: Full Score Card & Analytics -->
                 <div id="viewMockResult" class="step-view hidden">
                     <div class="card" style="padding: 28px;">
                         <h2 style="color:#818cf8; margin-bottom: 8px;">📊 Real Exam Score Card</h2>
@@ -609,7 +632,6 @@
         </main>
     </div>
 
-    <!-- Floating AI Assistant -->
     <div id="aiChatBtn">💬</div>
     <div id="aiChatWindow" class="ai-chat-hidden">
         <div class="ai-chat-header" id="aiChatHeader">
@@ -633,6 +655,74 @@
     <script>
         var firestoreDB = (typeof db !== 'undefined') ? db : firebase.firestore();
 
+        function cleanOptionValue(val) {
+            if (val === null || val === undefined) return "";
+            if (typeof val === "object") {
+                return val.text || val.value || val.content || val.option || "";
+            }
+            return String(val);
+        }
+
+        // COMPREHENSIVE TEXT, MATH, AND IMAGE NORMALIZER
+        function formatRichContent(text) {
+            let str = cleanOptionValue(text);
+            if (!str) return "";
+
+            // 1. Convert Display Math ($$...$$) with short inline values to Single Math ($...$)
+            // Eliminates vertical gaps from isolated numbers/units like $$800$$, $$N/m$$, $$20$$
+            str = str.replace(/\$\$\s*([^\$\n]{1,35})\s*\$\$/g, '$$$1$$');
+
+            // 2. Collapse unnatural multi-newlines into clean spaces
+            str = str.replace(/(\r\n|\r|\n){2,}/g, ' <br> ').replace(/(\r\n|\r|\n)/g, ' ');
+
+            // 3. Fix TeX legacy matrix/determinant syntax (\matrix{... \cr ...})
+            str = str.replace(/\\matrix\s*\{([\s\S]*?)\}/g, function(match, body) {
+                let cleanRows = body.replace(/\\cr/g, '\\\\');
+                return `\\begin{matrix}${cleanRows}\\end{matrix}`;
+            });
+            str = str.replace(/\\cr/g, '\\\\');
+
+            // 4. Clean up corrupted or duplicated <img> tags and salvage clean URLs
+            str = str.replace(/<img[^>]*src=["']?([^"'>\s]+)[^>]*>/gi, function(match, url) {
+                return `<img src="${url}" class="q-img-elem" loading="lazy" alt="Diagram">`;
+            });
+
+            // 5. Convert markdown images: ![alt](url)
+            str = str.replace(/!\[(.*?)\]\((.*?)\)/g, function(match, alt, url) {
+                return `<img src="${url.trim()}" class="q-img-elem" alt="${alt || 'Diagram'}" loading="lazy">`;
+            });
+
+            // 6. Convert unformatted standalone image URLs
+            str = str.replace(/(?<!src=["'])(https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp|svg))(?![^<]*>)/gi, function(match, url) {
+                return `<img src="${url}" class="q-img-elem" alt="Diagram" loading="lazy">`;
+            });
+
+            return str.trim();
+        }
+
+        // Fast KaTeX Renderer with legacy support macros
+        function renderMathFormulas(element) {
+            if (window.renderMathInElement && element) {
+                try {
+                    renderMathInElement(element, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        macros: {
+                            "\\cr": "\\\\",
+                            "\\matrix": "\\begin{matrix}#1\\end{matrix}"
+                        },
+                        throwOnError: false
+                    });
+                } catch(e) {
+                    console.warn("KaTeX rendering warning:", e);
+                }
+            }
+        }
+
         let dynamicExamConfigs = {};
         let currentUser = null;
         let currentExam = "";
@@ -644,6 +734,7 @@
         let filteredPyqQuestions = [];
         let currentPyqIndex = 0;
         let userSolvedMap = {};
+        let feedLimit = 40;
 
         let allShiftQuestions = [];
         let shiftSubjects = [];
@@ -653,13 +744,12 @@
         let mockTimerInterval = null;
         let mockTimeRemaining = 180 * 60;
 
-        // Guaranteed Sidebar User Profile Render
         firebase.auth().onAuthStateChanged(async (user) => {
             currentUser = user;
             const authBox = document.getElementById("authContainer");
 
             if (user) {
-                const name = user.displayName || "Jalesh";
+                const name = user.displayName || "Learner";
                 const photo = user.photoURL || "assets/image_1.png";
                 if (authBox) {
                     authBox.innerHTML = `
@@ -682,20 +772,26 @@
             }
         });
 
-        // Sync Exams from Firestore
         firestoreDB.collection("exam_categories").onSnapshot(snap => {
             dynamicExamConfigs = {};
             const container = document.getElementById("examCardsContainer");
             container.innerHTML = "";
 
-            snap.forEach(doc => {
-                const data = doc.data();
-                dynamicExamConfigs[doc.id] = data;
+            if (snap.empty) {
+                dynamicExamConfigs["JEE Main"] = { title: "JEE Main", subjects: ["Mathematics", "Physics", "Chemistry"] };
+                dynamicExamConfigs["NEET UG"] = { title: "NEET UG", subjects: ["Physics", "Chemistry", "Biology"] };
+            } else {
+                snap.forEach(doc => {
+                    dynamicExamConfigs[doc.id] = doc.data();
+                });
+            }
 
+            Object.keys(dynamicExamConfigs).forEach(id => {
+                const data = dynamicExamConfigs[id];
                 const card = document.createElement("div");
                 card.className = "exam-card-item";
-                card.onclick = () => window.selectExam(doc.id);
-                card.innerHTML = `<h3>${data.title || doc.id}</h3><p>${(data.subjects || []).join(", ")}</p>`;
+                card.onclick = () => window.selectExam(id);
+                card.innerHTML = `<h3>${data.title || id}</h3><p>${(data.subjects || []).join(", ")}</p>`;
                 container.appendChild(card);
             });
         });
@@ -742,12 +838,12 @@
                 document.getElementById("pyqSubjectTitle").innerText = `${currentExam} - Choose Subject (PYQ)`;
                 const container = document.getElementById("pyqSubjectsContainer");
                 container.innerHTML = "";
-                const subjects = dynamicExamConfigs[currentExam]?.subjects || ["Physics", "Chemistry", "Maths"];
+                const subjects = dynamicExamConfigs[currentExam]?.subjects || ["Mathematics", "Physics", "Chemistry"];
 
                 subjects.forEach(sub => {
                     const card = document.createElement("div");
                     card.className = "exam-card-item";
-                    card.innerHTML = `<h3>${sub}</h3><p>Practice Past Year Questions</p>`;
+                    card.innerHTML = `<h3>${sub}</h3><p>Practice 10 Years Past Questions</p>`;
                     card.onclick = () => window.loadPyqFeed(sub);
                     container.appendChild(card);
                 });
@@ -759,34 +855,49 @@
             }
         };
 
-        /* ==================== PYQ FEED & PRACTICE ==================== */
         window.loadPyqFeed = async function(subject) {
             currentPyqSubject = subject;
+            feedLimit = 40;
             document.getElementById("feedHeaderTitle").innerText = `${currentExam} - ${subject} (PYQs)`;
             window.goToView("viewQuestionFeed");
 
-            const feedContainer = document.getElementById("questionFeedList");
-            feedContainer.innerHTML = "<p style='color: var(--subtext-color, #94a3b8);'>Questions load ho rahe hain...</p>";
+            allPyqQuestions = [];
 
-            try {
-                const snapshot = await firestoreDB.collection("questions")
-                    .where("exam", "==", currentExam)
-                    .where("category", "==", "PYQ")
-                    .where("subject", "==", currentPyqSubject)
-                    .get();
-
-                allPyqQuestions = [];
-                snapshot.forEach(doc => {
-                    allPyqQuestions.push({ id: doc.id, ...doc.data() });
-                });
-
-                allPyqQuestions.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
-                populatePyqYearDropdown();
-                window.applyFeedFilters();
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                feedContainer.innerHTML = "<p style='color:#ef4444;'>Questions load nahi ho sake.</p>";
+            if (window.LOCAL_PYQ_DATA) {
+                const subKeys = Object.keys(window.LOCAL_PYQ_DATA);
+                const matchedKey = subKeys.find(k => k.toLowerCase().trim().startsWith(subject.toLowerCase().trim().slice(0, 4)));
+                if (matchedKey && Array.isArray(window.LOCAL_PYQ_DATA[matchedKey])) {
+                    allPyqQuestions = [...window.LOCAL_PYQ_DATA[matchedKey]];
+                }
             }
+
+            if (allPyqQuestions.length === 0) {
+                const subKey = subject.toLowerCase().includes("math") ? "maths" : (subject.toLowerCase().includes("phys") ? "physics" : "chem");
+                try {
+                    const res = await fetch(`pyq-data/${subKey}_2024.json`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        data.forEach((item, idx) => {
+                            allPyqQuestions.push({
+                                id: item.id || `local_${subKey}_${idx}`,
+                                exam: currentExam,
+                                subject: subject,
+                                year: item.year || 2024,
+                                chapter: item.chapter || "General",
+                                difficulty: item.difficulty || "Moderate",
+                                questionText: item.question || item.questionText,
+                                options: item.options || [],
+                                correctOptionIndex: (item.correct !== undefined) ? item.correct : item.correctOptionIndex,
+                                explanation: item.solution || item.explanation || ""
+                            });
+                        });
+                    }
+                } catch (e) {}
+            }
+
+            allPyqQuestions.sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0));
+            populatePyqYearDropdown();
+            window.applyFeedFilters();
         };
 
         function populatePyqYearDropdown() {
@@ -822,7 +933,9 @@
                 return;
             }
 
-            filteredPyqQuestions.forEach((q, index) => {
+            const currentBatch = filteredPyqQuestions.slice(0, feedLimit);
+
+            currentBatch.forEach((q, index) => {
                 const isSolved = userSolvedMap[q.id];
                 let statusBadge = `<span class="q-feed-status status-unsolved">Unsolved</span>`;
 
@@ -832,24 +945,40 @@
                         : `<span class="q-feed-status status-wrong">✕ Attempted</span>`;
                 }
 
-                const diff = q.difficulty || "Easy";
+                const diff = q.difficulty || "Moderate";
+                const chapterTag = q.chapter ? `&bull; ${cleanOptionValue(q.chapter)}` : '';
                 const card = document.createElement("div");
                 card.className = "q-feed-card";
                 card.onclick = () => window.openPyqAtIndex(index);
 
                 card.innerHTML = `
                     <div class="q-feed-header">
-                        <span style="color:#818cf8; font-weight:600;">Question #${index + 1} &bull; ${q.year || 'PYQ'}</span>
+                        <span style="color:#818cf8; font-weight:600;">Question #${index + 1} &bull; ${q.year || 'PYQ'} ${chapterTag}</span>
                         <div style="display:flex; gap:8px; align-items:center;">
                             <span class="diff-tag diff-${diff.toLowerCase()}">${diff}</span>
                             ${statusBadge}
                         </div>
                     </div>
-                    <div class="q-feed-title">${q.questionText}</div>
-                    <div style="font-size:12px; color: var(--subtext-color, #94a3b8);">Click karke solve karein &rarr;</div>
+                    <div class="q-feed-title math-content">${formatRichContent(q.questionText)}</div>
+                    <div style="font-size:12px; color: var(--subtext-color, #94a3b8); margin-top:8px;">Click karke solve karein &rarr;</div>
                 `;
                 feedContainer.appendChild(card);
             });
+
+            if (filteredPyqQuestions.length > feedLimit) {
+                const loadBtn = document.createElement("button");
+                loadBtn.className = "next-q-btn btn-secondary";
+                loadBtn.style.margin = "15px auto";
+                loadBtn.style.display = "block";
+                loadBtn.innerText = `Load More (${filteredPyqQuestions.length - feedLimit} remaining)`;
+                loadBtn.onclick = () => {
+                    feedLimit += 40;
+                    renderPyqFeedList();
+                };
+                feedContainer.appendChild(loadBtn);
+            }
+
+            renderMathFormulas(feedContainer);
         }
 
         window.openPyqAtIndex = function(index) {
@@ -860,27 +989,29 @@
 
         function renderPyqQuestion() {
             const qData = filteredPyqQuestions[currentPyqIndex];
-            document.getElementById("quizCategory").innerText = `${qData.exam} (${qData.year || 'PYQ'}) - ${qData.subject}`;
+            const chTitle = cleanOptionValue(qData.chapter);
+            document.getElementById("quizCategory").innerText = `${qData.exam || 'JEE Main'} (${qData.year || 'PYQ'}) - ${qData.subject} ${chTitle ? '• ' + chTitle : ''}`;
             document.getElementById("quizIndex").innerText = `Question ${currentPyqIndex + 1} of ${filteredPyqQuestions.length}`;
-            document.getElementById("quizQuestionText").innerText = qData.questionText;
+            
+            const qTextBox = document.getElementById("quizQuestionText");
+            qTextBox.innerHTML = formatRichContent(qData.questionText);
 
             const diffEl = document.getElementById("difficultyBadge");
-            const diff = qData.difficulty || "Easy";
+            const diff = qData.difficulty || "Moderate";
             diffEl.innerText = diff;
             diffEl.className = `diff-tag diff-${diff.toLowerCase()}`;
 
             const optionsContainer = document.getElementById("quizOptionsContainer");
             optionsContainer.innerHTML = "";
             document.getElementById("quizExplanation").classList.add("hidden");
-            document.getElementById("nextQuestionBtn").classList.add("hidden");
             document.getElementById("quizStatus").innerText = "Select an option to check answer";
 
             const alreadySolved = userSolvedMap[qData.id];
 
-            qData.options.forEach((opt, idx) => {
+            (qData.options || []).forEach((opt, idx) => {
                 const btn = document.createElement("button");
-                btn.className = "quiz-opt-btn";
-                btn.innerText = `${String.fromCharCode(65 + idx)}. ${opt}`;
+                btn.className = "quiz-opt-btn math-content";
+                btn.innerHTML = `<span style="font-weight:700; margin-right:4px;">${String.fromCharCode(65 + idx)}.</span> <span>${formatRichContent(opt)}</span>`;
                 
                 if (alreadySolved) {
                     btn.disabled = true;
@@ -894,8 +1025,10 @@
 
             if (alreadySolved) {
                 showPyqSolution(qData);
-                document.getElementById("nextQuestionBtn").classList.remove("hidden");
             }
+
+            renderMathFormulas(qTextBox);
+            renderMathFormulas(optionsContainer);
         }
 
         async function handlePyqAnswer(selectedIdx, btnElement, qData) {
@@ -915,7 +1048,6 @@
             }
 
             showPyqSolution(qData);
-            document.getElementById("nextQuestionBtn").classList.remove("hidden");
 
             userSolvedMap[qData.id] = { isCorrect, selectedOption: selectedIdx };
             window.updatePyqStatsCounter();
@@ -949,9 +1081,19 @@
 
         function showPyqSolution(qData) {
             const expBox = document.getElementById("quizExplanation");
-            expBox.innerHTML = `<strong>💡 Solution / Explanation:</strong><br>${qData.explanation || 'No detailed solution provided.'}`;
+            expBox.innerHTML = `<strong>💡 Solution / Explanation:</strong><br>${formatRichContent(qData.explanation || 'Detailed solution not available.')}`;
             expBox.classList.remove("hidden");
+            renderMathFormulas(expBox);
         }
+
+        window.prevPyqQuestion = function() {
+            if (currentPyqIndex > 0) {
+                currentPyqIndex--;
+                renderPyqQuestion();
+            } else {
+                alert("Ye pehla question hai!");
+            }
+        };
 
         window.nextPyqQuestion = function() {
             if (currentPyqIndex < filteredPyqQuestions.length - 1) {
@@ -1033,14 +1175,14 @@
             });
 
             if (allShiftQuestions.length === 0) {
-                const subs = dynamicExamConfigs[currentExam]?.subjects || ["Physics", "Chemistry", "Maths"];
+                const subs = dynamicExamConfigs[currentExam]?.subjects || ["Physics", "Chemistry", "Mathematics"];
                 subs.forEach(s => {
                     for (let i = 1; i <= 25; i++) {
                         allShiftQuestions.push({
                             id: `sample-${s}-${i}`,
                             subject: s,
-                            questionText: `[${s}] Q${i}: Authentic examination level statement for ${shiftName}. Determine the correct answer.`,
-                            options: ["Option A value", "Option B value", "Option C value", "Option D value"],
+                            questionText: `[${s}] Q${i}: Statement for ${shiftName}. Find the correct value when $x \\to 0$.`,
+                            options: ["Option A", "Option B", "Option C", "Option D"],
                             correctOptionIndex: (i % 4),
                             difficulty: i % 2 === 0 ? "Moderate" : "Easy",
                             explanation: `Detailed derivation and solution steps for ${s} Question #${i}.`
@@ -1050,7 +1192,7 @@
             }
 
             shiftSubjects = [...new Set(allShiftQuestions.map(q => q.subject))];
-            if (shiftSubjects.length === 0) shiftSubjects = ["Physics", "Chemistry", "Maths"];
+            if (shiftSubjects.length === 0) shiftSubjects = ["Physics", "Chemistry", "Mathematics"];
             activeSubject = shiftSubjects[0];
 
             mockAnswers = {};
@@ -1099,18 +1241,20 @@
             document.getElementById("mockQBadge").innerText = `Question ${currentSubQIndex + 1} of ${subQuestions.length}`;
             document.getElementById("mockActiveSubBadge").innerText = sub;
             document.getElementById("paletteTitle").innerText = `${sub} Palette (${subQuestions.length} Qs)`;
-            document.getElementById("mockQuestionText").innerText = qData.questionText;
+            
+            const qBox = document.getElementById("mockQuestionText");
+            qBox.innerHTML = formatRichContent(qData.questionText);
 
             const optContainer = document.getElementById("mockOptionsContainer");
             optContainer.innerHTML = "";
 
-            qData.options.forEach((opt, optIdx) => {
+            (qData.options || []).forEach((opt, optIdx) => {
                 const btn = document.createElement("button");
-                btn.className = "mock-opt-btn";
+                btn.className = "mock-opt-btn math-content";
                 if (mockAnswers[qData.id].selectedOption === optIdx) {
                     btn.classList.add("selected");
                 }
-                btn.innerText = `${String.fromCharCode(65 + optIdx)}. ${opt}`;
+                btn.innerHTML = `<span style="font-weight:700; margin-right:4px;">${String.fromCharCode(65 + optIdx)}.</span> <span>${formatRichContent(opt)}</span>`;
                 btn.onclick = () => {
                     mockAnswers[qData.id].selectedOption = optIdx;
                     loadSubjectQuestions(activeSubject, currentSubQIndex);
@@ -1119,6 +1263,8 @@
             });
 
             renderPaletteGrid();
+            renderMathFormulas(qBox);
+            renderMathFormulas(optContainer);
         }
 
         function renderPaletteGrid() {
@@ -1269,11 +1415,9 @@
             document.getElementById("mockReviewContainer").classList.add("hidden");
             window.goToView("viewMockResult");
 
-            // Guaranteed User Profile Document Update
             if (currentUser) {
                 const userRef = firestoreDB.collection("users").doc(currentUser.uid);
 
-                // 1. History doc save
                 userRef.collection("mock_attempts").add({
                     exam: currentExam,
                     shiftName: currentShift,
@@ -1285,7 +1429,6 @@
                     submittedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(e => console.error("History save error:", e));
 
-                // 2. Direct counters update on root profile
                 userRef.set({
                     totalMockTestsGiven: firebase.firestore.FieldValue.increment(1),
                     testsCompleted: firebase.firestore.FieldValue.increment(1),
@@ -1300,9 +1443,7 @@
                     accuracy: Number(accuracy),
                     lastMockDate: firebase.firestore.FieldValue.serverTimestamp(),
                     lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }).then(() => {
-                    console.log("Mock Test Data successfully pushed to User Profile!");
-                }).catch(err => console.error("Profile set error:", err));
+                }, { merge: true }).catch(err => console.error("Profile set error:", err));
             }
         };
 
@@ -1327,12 +1468,12 @@
                 card.style.cursor = "default";
 
                 let optHtml = "";
-                q.options.forEach((opt, oIdx) => {
+                (q.options || []).forEach((opt, oIdx) => {
                     let color = "var(--text-color, #cbd5e1)";
                     let prefix = "";
                     if (oIdx === q.correctOptionIndex) { color = "#34d399; font-weight:bold;"; prefix = " (Correct Answer)"; }
                     if (oIdx === sel && !isCorrect) { color = "#f87171; font-weight:bold;"; prefix = " (Your Choice)"; }
-                    optHtml += `<div style="font-size:13px; color:${color}; margin-bottom:5px;">${String.fromCharCode(65 + oIdx)}. ${opt}${prefix}</div>`;
+                    optHtml += `<div style="font-size:13px; color:${color}; margin-bottom:5px;">${String.fromCharCode(65 + oIdx)}. <span>${formatRichContent(opt)}</span>${prefix}</div>`;
                 });
 
                 card.innerHTML = `
@@ -1340,14 +1481,15 @@
                         <span style="font-weight:600; color:#818cf8;">[${q.subject}] Question #${idx + 1}</span>
                         ${badge}
                     </div>
-                    <div class="q-feed-title">${q.questionText}</div>
+                    <div class="q-feed-title math-content">${formatRichContent(q.questionText)}</div>
                     <div style="margin: 12px 0;">${optHtml}</div>
-                    <div class="solution-box" style="margin-top:10px;"><strong>💡 Detailed Solution:</strong><br>${q.explanation || 'No explanation provided.'}</div>
+                    <div class="solution-box math-content" style="margin-top:10px;"><strong>💡 Detailed Solution:</strong><br>${formatRichContent(q.explanation || 'Detailed solution not available.')}</div>
                 `;
                 reviewBox.appendChild(card);
             });
 
             reviewBox.classList.remove("hidden");
+            renderMathFormulas(reviewBox);
             reviewBox.scrollIntoView({ behavior: 'smooth' });
         };
 
@@ -1391,9 +1533,7 @@
 
         (function setupDraggableElements() {
             function makeDraggable(targetEl, handleEl, isIcon = false) {
-                let isDragging = false;
-                let startX, startY, initialLeft, initialTop;
-                let hasMoved = false;
+                let isDragging = false, startX, startY, initialLeft, initialTop, hasMoved = false;
 
                 handleEl.addEventListener("mousedown", (e) => {
                     if (e.target.classList.contains("ai-close-btn")) return;
@@ -1408,6 +1548,7 @@
                     startY = e.clientY;
                     initialLeft = rect.left;
                     initialTop = rect.top;
+
                     document.addEventListener("mousemove", onMouseMove);
                     document.addEventListener("mouseup", onMouseUp);
                 });
@@ -1417,10 +1558,8 @@
                     const dx = e.clientX - startX;
                     const dy = e.clientY - startY;
                     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
-                    let newLeft = initialLeft + dx;
-                    let newTop = initialTop + dy;
-                    newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, newLeft));
-                    newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, newTop));
+                    let newLeft = Math.max(10, Math.min(window.innerWidth - targetEl.offsetWidth - 10, initialLeft + dx));
+                    let newTop = Math.max(10, Math.min(window.innerHeight - targetEl.offsetHeight - 10, initialTop + dy));
                     targetEl.style.left = newLeft + "px";
                     targetEl.style.top = newTop + "px";
                 }
